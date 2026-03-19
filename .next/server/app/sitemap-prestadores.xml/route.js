@@ -1,0 +1,10 @@
+"use strict";(()=>{var e={};e.id=2196,e.ids=[2196],e.modules={53524:e=>{e.exports=require("@prisma/client")},20399:e=>{e.exports=require("next/dist/compiled/next-server/app-page.runtime.prod.js")},30517:e=>{e.exports=require("next/dist/compiled/next-server/app-route.runtime.prod.js")},34355:(e,t,r)=>{r.r(t),r.d(t,{originalPathname:()=>g,patchFetch:()=>x,requestAsyncStorage:()=>d,routeModule:()=>u,serverHooks:()=>c,staticGenerationAsyncStorage:()=>m});var a={};r.r(a),r.d(a,{GET:()=>n});var s=r(49303),i=r(88716),o=r(60670),l=r(87070),p=r(72331);async function n(){let e=(await p._.prestador.findMany({where:{ativo:!0,aprovado:!0},select:{slug:!0,updatedAt:!0,servico:{select:{slug:!0}},cidade:{select:{slug:!0,uf:!0}}}})).map(e=>{let t=`/${e.cidade.slug}-${e.cidade.uf.toLowerCase()}/${e.servico.slug}/${e.slug}/`;return`
+  <url>
+    <loc>https://listasdaqui.com.br${t}</loc>
+    <lastmod>${e.updatedAt.toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`}).join(""),t=`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${e}
+</urlset>`;return new l.NextResponse(t,{headers:{"Content-Type":"application/xml","Cache-Control":"public, max-age=3600, s-maxage=14400, stale-while-revalidate=86400"}})}let u=new s.AppRouteRouteModule({definition:{kind:i.x.APP_ROUTE,page:"/sitemap-prestadores.xml/route",pathname:"/sitemap-prestadores.xml",filename:"route",bundlePath:"app/sitemap-prestadores.xml/route"},resolvedPagePath:"C:\\Users\\Dell\\Desktop\\Lista Daqui\\listasdaqui\\app\\sitemap-prestadores.xml\\route.ts",nextConfigOutput:"",userland:a}),{requestAsyncStorage:d,staticGenerationAsyncStorage:m,serverHooks:c}=u,g="/sitemap-prestadores.xml/route";function x(){return(0,o.patchFetch)({serverHooks:c,staticGenerationAsyncStorage:m})}},72331:(e,t,r)=>{r.d(t,{_:()=>s});var a=r(53524);let s=global.prisma||new a.PrismaClient}};var t=require("../../webpack-runtime.js");t.C(e);var r=e=>t(t.s=e),a=t.X(0,[8948,5972],()=>r(34355));module.exports=a})();

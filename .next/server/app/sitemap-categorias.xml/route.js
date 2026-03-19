@@ -1,0 +1,9 @@
+"use strict";(()=>{var e={};e.id=2601,e.ids=[2601],e.modules={53524:e=>{e.exports=require("@prisma/client")},20399:e=>{e.exports=require("next/dist/compiled/next-server/app-page.runtime.prod.js")},30517:e=>{e.exports=require("next/dist/compiled/next-server/app-route.runtime.prod.js")},16449:(e,t,r)=>{r.r(t),r.d(t,{originalPathname:()=>g,patchFetch:()=>x,requestAsyncStorage:()=>c,routeModule:()=>u,serverHooks:()=>d,staticGenerationAsyncStorage:()=>m});var a={};r.r(a),r.d(a,{GET:()=>p});var s=r(49303),i=r(88716),o=r(60670),l=r(87070),n=r(72331);async function p(){let[e,t]=await Promise.all([n._.cidade.findMany({select:{slug:!0,uf:!0}}),n._.servico.findMany({select:{slug:!0}})]),r=[];for(let a of e)for(let e of t){let t=`/${a.slug}-${a.uf.toLowerCase()}/${e.slug}/`;r.push(`
+  <url>
+    <loc>https://listasdaqui.com.br${t}</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>`)}let a=`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${r.join("")}
+</urlset>`;return new l.NextResponse(a,{headers:{"Content-Type":"application/xml","Cache-Control":"public, max-age=3600, s-maxage=86400"}})}let u=new s.AppRouteRouteModule({definition:{kind:i.x.APP_ROUTE,page:"/sitemap-categorias.xml/route",pathname:"/sitemap-categorias.xml",filename:"route",bundlePath:"app/sitemap-categorias.xml/route"},resolvedPagePath:"C:\\Users\\Dell\\Desktop\\Lista Daqui\\listasdaqui\\app\\sitemap-categorias.xml\\route.ts",nextConfigOutput:"",userland:a}),{requestAsyncStorage:c,staticGenerationAsyncStorage:m,serverHooks:d}=u,g="/sitemap-categorias.xml/route";function x(){return(0,o.patchFetch)({serverHooks:d,staticGenerationAsyncStorage:m})}},72331:(e,t,r)=>{r.d(t,{_:()=>s});var a=r(53524);let s=global.prisma||new a.PrismaClient}};var t=require("../../webpack-runtime.js");t.C(e);var r=e=>t(t.s=e),a=t.X(0,[8948,5972],()=>r(16449));module.exports=a})();
