@@ -1,0 +1,299 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─────────────────────────────────────────────
+// PRESTADORES
+// ─────────────────────────────────────────────
+
+model Prestador {
+  id          String      @id @default(cuid())
+  nome        String      @db.VarChar(100)
+  slug        String      @unique @db.VarChar(120)
+  whatsapp    String      @db.VarChar(20)
+  bio         String?     @db.Text
+  instagram   String?     @db.VarChar(60)
+  foto        String?     @db.VarChar(255)
+  schemaType  String      @default("ProfessionalService") @db.VarChar(60)
+  plano       Plano       @default(GRATUITO)
+  ativo       Boolean     @default(true)
+  aprovado    Boolean     @default(false)
+  servicoId   String
+  cidadeId    String
+  userId      String      @unique
+  servico     Servico     @relation(fields: [servicoId], references: [id])
+  cidade      Cidade      @relation(fields: [cidadeId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+  avaliacoes  Avaliacao[]
+  planoLog    PlanoLog[]
+  rejeicoes   Rejeicao[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([servicoId, cidadeId, plano, ativo])
+  @@index([cidadeId])
+}
+
+enum Plano {
+  GRATUITO
+  VERIFICADO
+  DESTAQUE
+}
+
+// ─────────────────────────────────────────────
+// SERVIÇOS E CIDADES
+// ─────────────────────────────────────────────
+
+model Servico {
+  id          String      @id @default(cuid())
+  nome        String      @db.VarChar(80)
+  slug        String      @unique @db.VarChar(80)
+  icone       String?     @db.VarChar(10)
+  descricao   String?     @db.Text
+  schemaType  String      @default("Service") @db.VarChar(60)
+  tier        Int         @default(1)
+  ativo       Boolean     @default(true)
+  prestadores Prestador[]
+  conteudos   Conteudo[]
+  createdAt   DateTime    @default(now())
+}
+
+model Cidade {
+  id          String      @id @default(cuid())
+  nome        String      @db.VarChar(80)
+  slug        String      @unique @db.VarChar(80)
+  uf          String      @db.Char(2)
+  populacao   Int?
+  latitude    Float?
+  longitude   Float?
+  ativo       Boolean     @default(true)
+  prestadores Prestador[]
+  conteudos   Conteudo[]
+  createdAt   DateTime    @default(now())
+
+  @@index([uf])
+}
+
+// ─────────────────────────────────────────────
+// AUTENTICAÇÃO
+// ─────────────────────────────────────────────
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique @db.VarChar(120)
+  passwordHash  String         @db.VarChar(255)
+  role          Role           @default(PRESTADOR)
+  prestador     Prestador?
+  refreshTokens RefreshToken[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+enum Role {
+  PRESTADOR
+  ADMIN
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique @db.VarChar(512)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// AVALIAÇÕES
+// ─────────────────────────────────────────────
+
+model Avaliacao {
+  id          String    @id @default(cuid())
+  prestadorId String
+  prestador   Prestador @relation(fields: [prestadorId], references: [id], onDelete: Cascade)
+  nota        Int       // 1 a 5
+  texto       String?   @db.Text
+  autorNome   String    @db.VarChar(80)
+  aprovado    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([prestadorId, aprovado])
+}
+
+// ─────────────────────────────────────────────
+// PLANOS E PAGAMENTOS
+// ─────────────────────────────────────────────
+
+model PlanoLog {
+  id          String    @id @default(cuid())
+  prestadorId String
+  prestador   Prestador @relation(fields: [prestadorId], references: [id])
+  plano       Plano
+  status      StatusPagamento
+  valor       Float
+  metodoPagamento String? @db.VarChar(40)
+  referencia  String?   @db.VarChar(100)  // ID externo do gateway
+  inicioEm    DateTime?
+  venceEm     DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([prestadorId])
+  @@index([venceEm])
+}
+
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  CANCELADO
+  EXPIRADO
+}
+
+// ─────────────────────────────────────────────
+// CONTEÚDO EDITORIAL (gerado via Claude API)
+// ─────────────────────────────────────────────
+
+model Conteudo {
+  id          String   @id @default(cuid())
+  servicoId   String
+  cidadeId    String
+  servico     Servico  @relation(fields: [servicoId], references: [id])
+  cidade      Cidade   @relation(fields: [cidadeId], references: [id])
+  titulo      String   @db.VarChar(160)
+  descricao   String   @db.Text
+  precoMin    Float?
+  precoMax    Float?
+  faqJson     Json?    // array de { pergunta, resposta }
+  geradoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([servicoId, cidadeId])
+  @@index([servicoId, cidadeId])
+}
+
+// ─────────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  evento    String   @db.VarChar(60)
+  userId    String?
+  payload   Json?
+  ip        String?  @db.VarChar(45)
+  createdAt DateTime @default(now())
+
+  admin     AdminUser? @relation(fields: [userId], references: [id])
+
+  @@index([evento])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// SUPER ADMIN — autenticação separada
+// ─────────────────────────────────────────────
+
+model AdminUser {
+  id            String       @id @default(cuid())
+  email         String       @unique @db.VarChar(120)
+  passwordHash  String       @db.VarChar(255)
+  nome          String       @db.VarChar(80)
+  twoFactorSecret String?    @db.VarChar(64)
+  twoFactorAtivo  Boolean    @default(false)
+  ativo         Boolean      @default(true)
+  ultimoAcesso  DateTime?
+  createdAt     DateTime     @default(now())
+  acoes         AuditLog[]
+  rejeicoes     Rejeicao[]
+}
+
+// ─────────────────────────────────────────────
+// BLOQUEIOS
+// ─────────────────────────────────────────────
+
+model Bloqueio {
+  id          String        @id @default(cuid())
+  tipo        TipoBloqueio
+  alvoId      String
+  motivo      String        @db.VarChar(255)
+  adminId     String
+  ativo       Boolean       @default(true)
+  criadoEm    DateTime      @default(now())
+  expiradoEm  DateTime?
+
+  @@index([alvoId, ativo])
+}
+
+enum TipoBloqueio {
+  FICHA
+  CONTA
+  IP
+}
+
+// ─────────────────────────────────────────────
+// CONFIGURAÇÕES GLOBAIS
+// ─────────────────────────────────────────────
+
+model Configuracao {
+  chave     String   @id @db.VarChar(80)
+  valor     String   @db.Text
+  descricao String?  @db.VarChar(255)
+  updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// FILA DE EMAILS (visível no admin)
+// ─────────────────────────────────────────────
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  para      String   @db.VarChar(120)
+  assunto   String   @db.VarChar(255)
+  status    String   @db.VarChar(20)
+  tentativas Int     @default(0)
+  erro      String?  @db.Text
+  criadoEm  DateTime @default(now())
+  enviadoEm DateTime?
+}
+
+// ─────────────────────────────────────────────
+// SEO — controle de indexação por página
+// ─────────────────────────────────────────────
+
+model SeoOverride {
+  id          String   @id @default(cuid())
+  url         String   @unique @db.VarChar(255)
+  metaTitle   String?  @db.VarChar(160)
+  metaDesc    String?  @db.VarChar(320)
+  noindex     Boolean  @default(false)
+  canonical   String?  @db.VarChar(255)
+  updatedAt   DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// REJEIÇÕES DE CADASTRO
+// ─────────────────────────────────────────────
+
+model Rejeicao {
+  id          String   @id @default(cuid())
+  prestadorId String
+  prestador   Prestador @relation(fields: [prestadorId], references: [id], onDelete: Cascade)
+  adminId     String
+  admin       AdminUser @relation(fields: [adminId], references: [id])
+  motivo      String   @db.VarChar(255)
+  detalhes    String?  @db.Text
+  resolvida   Boolean  @default(false)
+  criadaEm    DateTime @default(now())
+
+  @@index([prestadorId, resolvida])
+}
+
+
