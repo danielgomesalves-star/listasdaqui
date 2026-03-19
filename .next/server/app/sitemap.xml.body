@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://listasdaqui.com.br/sitemap-categorias.xml</loc>
+    <lastmod>2026-03-19T05:58:12.181Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://listasdaqui.com.br/sitemap-prestadores.xml</loc>
+    <lastmod>2026-03-19T05:58:12.181Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://listasdaqui.com.br/sitemap-cidades.xml</loc>
+    <lastmod>2026-03-19T05:58:12.181Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://listasdaqui.com.br/sitemap-static.xml</loc>
+    <lastmod>2026-03-19T05:58:12.181Z</lastmod>
+  </sitemap>
+</sitemapindex>
