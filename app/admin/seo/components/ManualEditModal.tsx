@@ -8,6 +8,11 @@ interface FAQItem {
     resposta: string;
 }
 
+interface DicaItem {
+    titulo: string;
+    descricao: string;
+}
+
 interface ManualEditModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -18,11 +23,14 @@ interface ManualEditModalProps {
         cidadeNome: string;
         uf: string;
         titulo?: string;
-        descricao?: string;
+        introducao?: string;
+        corpoTexto?: string;
         precoMin?: number;
         precoMax?: number;
         status: string;
         faqJson?: any;
+        beneficiosJson?: any;
+        dicasJson?: any;
     } | null;
     onSuccess: () => void;
 }
@@ -33,9 +41,12 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
 
     const [formData, setFormData] = useState({
         titulo: '',
-        descricao: '',
+        introducao: '',
+        corpoTexto: '',
         precoMin: 50,
         precoMax: 300,
+        beneficios: [] as string[],
+        dicas: [] as DicaItem[],
         faq: [] as FAQItem[]
     })
 
@@ -43,9 +54,12 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
         if (item) {
             setFormData({
                 titulo: item.titulo || '',
-                descricao: item.descricao || '',
+                introducao: item.introducao || '',
+                corpoTexto: item.corpoTexto || '',
                 precoMin: item.precoMin || 50,
                 precoMax: item.precoMax || 300,
+                beneficios: Array.isArray(item.beneficiosJson) ? item.beneficiosJson : [],
+                dicas: Array.isArray(item.dicasJson) ? item.dicasJson : [],
                 faq: Array.isArray(item.faqJson) ? item.faqJson : []
             })
         }
@@ -73,9 +87,12 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
             const data = json.data
             setFormData({
                 titulo: data.titulo,
-                descricao: data.descricao,
+                introducao: data.introducao,
+                corpoTexto: data.corpoTexto,
                 precoMin: data.precoMin,
                 precoMax: data.precoMax,
+                beneficios: data.beneficiosJson || [],
+                dicas: data.dicasJson || [],
                 faq: data.faqJson || []
             })
             toast.success('Conteúdo sugerido com sucesso pela IA!')
@@ -123,6 +140,18 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
         setFormData({ ...formData, faq: newFaq })
     }
 
+    const updateBeneficio = (index: number, value: string) => {
+        const newBeneficios = [...formData.beneficios]
+        newBeneficios[index] = value
+        setFormData({ ...formData, beneficios: newBeneficios })
+    }
+
+    const updateDica = (index: number, field: keyof DicaItem, value: string) => {
+        const newDicas = [...formData.dicas]
+        newDicas[index][field] = value
+        setFormData({ ...formData, dicas: newDicas })
+    }
+
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
@@ -160,12 +189,24 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-text3 uppercase mb-1">Descrição Página</label>
+                        <label className="block text-xs font-bold text-text3 uppercase mb-1">Introdução SEO (Snippet - 40-60 palavras)</label>
                         <textarea
-                            rows={4}
+                            rows={3}
                             className="w-full border border-border rounded-lg p-3 text-sm focus:ring-2 focus:ring-accent outline-none"
-                            value={formData.descricao}
-                            onChange={e => setFormData({ ...formData, descricao: e.target.value })}
+                            value={formData.introducao}
+                            onChange={e => setFormData({ ...formData, introducao: e.target.value })}
+                            placeholder="Definição direta do serviço para extração por IAs..."
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-text3 uppercase mb-1">Corpo Editorial Robusto</label>
+                        <textarea
+                            rows={6}
+                            className="w-full border border-border rounded-lg p-3 text-sm focus:ring-2 focus:ring-accent outline-none"
+                            value={formData.corpoTexto}
+                            onChange={e => setFormData({ ...formData, corpoTexto: e.target.value })}
+                            placeholder="Texto detalhado sobre o serviço na cidade, com informações úteis e locais..."
                         />
                     </div>
 
@@ -187,6 +228,74 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
                                 value={formData.precoMax}
                                 onChange={e => setFormData({ ...formData, precoMax: Number(e.target.value) })}
                             />
+                        </div>
+                    </div>
+
+                    <div>
+                        <div className="flex justify-between items-center mb-4">
+                            <label className="block text-xs font-bold text-text3 uppercase">Benefícios do Serviço</label>
+                            <button
+                                onClick={() => setFormData({ ...formData, beneficios: [...formData.beneficios, ''] })}
+                                className="text-accent text-xs font-bold hover:underline"
+                            >
+                                ➕ ADICIONAR BENEFÍCIO
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            {formData.beneficios.map((b, idx) => (
+                                <div key={idx} className="flex gap-2 group">
+                                    <input
+                                        type="text"
+                                        className="flex-1 border border-border rounded-lg p-2 text-sm outline-none focus:ring-1 focus:ring-accent"
+                                        value={b}
+                                        onChange={e => updateBeneficio(idx, e.target.value)}
+                                        placeholder="Ex: Profissionais certificados..."
+                                    />
+                                    <button
+                                        onClick={() => setFormData({ ...formData, beneficios: formData.beneficios.filter((_, i) => i !== idx) })}
+                                        className="bg-red-50 text-red-600 px-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div className="flex justify-between items-center mb-4">
+                            <label className="block text-xs font-bold text-text3 uppercase">Dicas de Especialista</label>
+                            <button
+                                onClick={() => setFormData({ ...formData, dicas: [...formData.dicas, { titulo: '', descricao: '' }] })}
+                                className="text-accent text-xs font-bold hover:underline"
+                            >
+                                ➕ ADICIONAR DICA
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            {formData.dicas.map((d, idx) => (
+                                <div key={idx} className="bg-bg p-4 rounded-xl border border-border space-y-2 relative group">
+                                    <button
+                                        onClick={() => setFormData({ ...formData, dicas: formData.dicas.filter((_, i) => i !== idx) })}
+                                        className="absolute -top-2 -right-2 bg-red-100 text-red-600 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm text-xs font-bold"
+                                    >
+                                        ✕
+                                    </button>
+                                    <input
+                                        type="text"
+                                        placeholder="Título da Dica"
+                                        className="w-full bg-white border border-border rounded-lg p-2 text-sm outline-none"
+                                        value={d.titulo}
+                                        onChange={e => updateDica(idx, 'titulo', e.target.value)}
+                                    />
+                                    <textarea
+                                        placeholder="Breve explicação da dica..."
+                                        className="w-full bg-white border border-border rounded-lg p-2 text-sm outline-none"
+                                        value={d.descricao}
+                                        onChange={e => updateDica(idx, 'descricao', e.target.value)}
+                                    />
+                                </div>
+                            ))}
                         </div>
                     </div>
 

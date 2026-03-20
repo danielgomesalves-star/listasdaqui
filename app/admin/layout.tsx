@@ -64,6 +64,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <Link href="/admin/seo" className={`block px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors ${pathname.startsWith('/admin/seo') ? 'bg-bg text-accent' : 'text-text3 hover:bg-gray-50'}`}>
                         Geração de Conteúdo SEO
                     </Link>
+                    <Link href="/admin/configuracoes" className={`block px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors ${pathname.startsWith('/admin/configuracoes') ? 'bg-bg text-accent' : 'text-text3 hover:bg-gray-50'}`}>
+                        ⚙️ Configurações de IA
+                    </Link>
                 </nav>
 
                 <div className="p-4 border-t border-border mt-auto">

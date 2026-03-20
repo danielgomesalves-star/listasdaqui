@@ -69,9 +69,9 @@ mysql -u listadaq_usr -pSENHA listadaq_bd -e "SHOW TABLES;"
 ## Estratégia de Deploy
 
 > ⚠️ O servidor **não tem memória suficiente para rodar `npm run build`** em produção.  
-> O build é feito **localmente** e a pasta `.next/` compilada é commitada no Git.
+> O build é feito **localmente** e enviado para o servidor via **pscp**.
 
-> ⚠️ **IMPORTANTE:** O `.env` foi removido do Git em março/2026. Nunca commitar o `.env` novamente.  
+> ⚠️ **IMPORTANTE:** O `.env` nunca vai para o Git. Nunca commitar o `.env`.  
 > Se alguém por acidente fizer `git add -f .env`, desfaça com: `git rm --cached .env && git commit -m "fix: remove .env from git"`
 
 ### Fluxo de deploy completo (toda vez que houver mudança de código):
@@ -84,10 +84,12 @@ cd "c:\Users\Dell\Desktop\Lista Daqui\listasdaqui"
 # Buildar localmente
 npm run build
 
-# Commitar o build junto com o código
-git add -f .next
+# Enviar a pasta .next para o servidor via pscp (não commitar no Git)
+pscp -P 4360 -r .next root@167.114.209.181:/var/www/listasdaqui/
+
+# Commitar apenas o código-fonte (sem .next)
 git add .
-git commit -m "deploy: descrição das mudanças"
+git commit -m "deploy: descricao das mudancas"
 git push
 ```
 
@@ -95,15 +97,19 @@ git push
 ```bash
 cd /var/www/listasdaqui
 
-# PASSO 1: Atualizar código do git
+# PASSO 1: Atualizar o código-fonte (schema.prisma, etc.)
+# DEVE ser feito ANTES do prisma generate
 git fetch --all
 git reset --hard origin/main
 
-# PASSO 2: DEPOIS do reset, corrigir o .env (o reset não toca o .env mais)
-# Verifique se o .env ainda está correto:
+# PASSO 2: Se houve mudança no schema.prisma, regenerar o Prisma Client
+# SEMPRE após o git reset e ANTES do pm2 restart
+npx prisma generate
+
+# PASSO 3: Verificar o .env (git reset não toca o .env pois está no .gitignore)
 cat /var/www/listasdaqui/.env
 
-# Se o .env foi perdido ou está errado, recriar:
+# Se o .env foi perdido, recriar:
 cat > /var/www/listasdaqui/.env << 'EOF'
 DATABASE_URL="mysql://listadaq_usr:SENHA@localhost:3306/listadaq_bd"
 JWT_SECRET="string_com_no_minimo_32_caracteres_aqui"
@@ -112,11 +118,16 @@ ANTHROPIC_API_KEY="sk-ant-..."
 REDIS_URL="redis://localhost:6379"
 EOF
 
-# PASSO 3: Reiniciar com --update-env para recarregar variáveis de ambiente
+# PASSO 4: Reiniciar com --update-env para recarregar variáveis de ambiente
 pm2 restart all --update-env
 ```
 
 Sem `npm install` e sem `npm run build` no servidor.
+
+> ⚠️ **ATENÇÃO com mudanças de schema:** Se você alterou o `prisma/schema.prisma`,
+> o `git reset` DEVE acontecer ANTES do `npx prisma generate`. Caso contrário,
+> o Prisma Client será gerado com o schema antigo e causará `PrismaClientValidationError`
+> com campos como `Unknown field` mesmo que o banco já tenha as colunas corretas.
 
 ---
 

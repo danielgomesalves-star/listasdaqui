@@ -14,7 +14,20 @@ export async function listarConteudos(params: {
     const cidades = await prisma.cidade.findMany({ where: { ativo: true } })
     const servicos = await prisma.servico.findMany({ where: { ativo: true } })
     const conteudosGerados = await prisma.conteudo.findMany({
-        select: { id: true, servicoId: true, cidadeId: true, titulo: true, geradoEm: true }
+        select: {
+            id: true,
+            servicoId: true,
+            cidadeId: true,
+            titulo: true,
+            introducao: true,
+            corpoTexto: true,
+            precoMin: true,
+            precoMax: true,
+            beneficiosJson: true,
+            dicasJson: true,
+            faqJson: true,
+            geradoEm: true
+        }
     })
 
     const geradosMap = new Map(conteudosGerados.map(c => [`${c.servicoId}:${c.cidadeId}`, c]))
@@ -100,12 +113,33 @@ export async function gerarConteudosSimulado() {
 }
 
 export async function salvarConteudoManual(data: z.infer<typeof manualSchema>) {
-    const { servicoId, cidadeId, titulo, descricao, precoMin, precoMax, faq } = data
+    const { servicoId, cidadeId, titulo, introducao, corpoTexto, precoMin, precoMax, faq, beneficios, dicas } = data
 
     return prisma.conteudo.upsert({
         where: { servicoId_cidadeId: { servicoId, cidadeId } },
-        create: { servicoId, cidadeId, titulo, descricao, precoMin, precoMax, faqJson: faq },
-        update: { titulo, descricao, precoMin, precoMax, faqJson: faq, atualizadoEm: new Date() }
+        create: {
+            servicoId,
+            cidadeId,
+            titulo: titulo || '',
+            introducao,
+            corpoTexto,
+            precoMin,
+            precoMax,
+            faqJson: faq,
+            beneficiosJson: beneficios,
+            dicasJson: dicas
+        },
+        update: {
+            titulo,
+            introducao,
+            corpoTexto,
+            precoMin,
+            precoMax,
+            faqJson: faq,
+            beneficiosJson: beneficios,
+            dicasJson: dicas,
+            atualizadoEm: new Date()
+        }
     })
 }
 
