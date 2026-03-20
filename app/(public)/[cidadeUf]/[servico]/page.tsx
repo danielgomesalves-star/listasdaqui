@@ -3,6 +3,8 @@ import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import { PrismaClient } from '@prisma/client';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { Avatar } from '@/components/ui/Avatar';
+import { FAQItem } from '@/components/ui/FAQItem';
 
 const prisma = new PrismaClient();
 
@@ -170,10 +172,7 @@ export default async function CategoryPage({ params }: Props) {
                         </div>
                     ) : (
                         prestadores.map((p, i) => {
-                            const initials = p.nome.split(' ').slice(0, 2).map((n: string) => n[0]).join('').toUpperCase();
                             const isPago = p.plano !== 'GRATUITO';
-                            const bgColors = ['bg-[#FEF3C7] text-[#B45309]', 'bg-accent-light text-accent', 'bg-bg2 text-text3'];
-                            const bgColor = bgColors[i % bgColors.length];
 
                             return (
                                 <Link
@@ -181,16 +180,7 @@ export default async function CategoryPage({ params }: Props) {
                                     href={`/${cidade.slug}/${servico.slug}/${p.slug || p.id}`}
                                     className={`flex items-start gap-3.5 p-4 border-b border-border relative no-underline text-inherit hover:bg-bg2 transition-colors ${i === 0 && isPago ? 'bg-gradient-to-r from-[#FFFBEB] to-white' : 'bg-white'}`}
                                 >
-                                    <div className="relative shrink-0">
-                                        {p.foto ? (
-                                            <img src={p.foto} alt={p.nome} className="w-[62px] h-[62px] rounded-full object-cover" />
-                                        ) : (
-                                            <div className={`w-[62px] h-[62px] rounded-full flex items-center justify-center text-[20px] font-extrabold overflow-hidden ${bgColor}`}>
-                                                {initials}
-                                            </div>
-                                        )}
-                                        {isPago && <div className="absolute bottom-0.5 right-0.5 w-[14px] h-[14px] bg-green rounded-full border-2 border-white"></div>}
-                                    </div>
+                                    <Avatar nome={p.nome} foto={p.foto} isPago={isPago} colorIndex={i} />
                                     <div className="flex-1 min-w-0 pt-0.5">
                                         <div className="flex items-center gap-1.5 mb-1">
                                             <span className={`text-lg font-black tracking-tight truncate max-w-[200px] ${isPago ? 'text-text' : 'text-text2'}`}>{p.nome}</span>
@@ -265,13 +255,7 @@ export default async function CategoryPage({ params }: Props) {
                                 <>
                                     <h2 className="text-[15px] font-extrabold text-text tracking-tight mb-2 mt-4">Perguntas frequentes</h2>
                                     {faqs.map((faq, i) => (
-                                        <details key={i} className="border-t border-border pt-3 mt-3 group/faq">
-                                            <summary className="flex justify-between items-start gap-2.5 cursor-pointer list-none mb-1.5">
-                                                <div className="text-[13px] font-bold text-text tracking-tight">{faq.pergunta}</div>
-                                                <div className="w-5 h-5 bg-border rounded-full flex items-center justify-center text-[13px] font-bold text-text2 shrink-0 leading-none group-open/faq:rotate-45 transition-transform">+</div>
-                                            </summary>
-                                            <div className="text-[12.5px] text-text2 leading-relaxed pb-1">{faq.resposta}</div>
-                                        </details>
+                                        <FAQItem key={i} pergunta={faq.pergunta} resposta={faq.resposta} />
                                     ))}
                                 </>
                             )}

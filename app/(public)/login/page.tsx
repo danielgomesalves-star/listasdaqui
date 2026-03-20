@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { FormField } from '@/components/ui/FormField'
 
 export default function LoginPage() {
     const router = useRouter()
@@ -57,15 +58,13 @@ export default function LoginPage() {
                 {error && <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm mb-4 font-semibold">{error}</div>}
 
                 <form onSubmit={handleLogin}>
-                    <div className="form-group">
-                        <label className="form-label">E-mail</label>
+                    <FormField label="E-mail">
                         <input required type="email" className="form-input" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
-                    </div>
+                    </FormField>
 
-                    <div className="form-group">
-                        <label className="form-label">Senha</label>
+                    <FormField label="Senha">
                         <input required type="password" minLength={8} className="form-input" placeholder="••••••••" value={senha} onChange={e => setSenha(e.target.value)} />
-                    </div>
+                    </FormField>
 
                     <button type="submit" disabled={loading} className="form-submit disabled:opacity-50 mt-2">
                         {loading ? 'Entrando...' : 'Entrar →'}

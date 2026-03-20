@@ -1,6 +1,10 @@
 import Link from 'next/link';
-import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import { PrismaClient } from '@prisma/client';
+import { ServiceCard } from '@/components/ui/ServiceCard';
+import { SectionHeader } from '@/components/ui/SectionHeader';
+import { StatsRow } from '@/components/ui/StatsRow';
+import { CTABanner } from '@/components/ui/CTABanner';
+import { FeaturedProviderItem } from '@/components/ui/FeaturedProviderItem';
 
 const prisma = new PrismaClient();
 
@@ -27,13 +31,6 @@ export default async function HomePage() {
     console.error("Home query falhou (provavelmente banco vazio ou offline):", err);
   }
 
-  // Mapping icons to generic services for visual fidelity
-  const fallbackIcons: Record<string, string> = {
-    'eletricista': '⚡', 'encanador': '🔧', 'pintor': '🎨',
-    'ar-condicionado': '❄️', 'chaveiro': '🔑', 'mecanico': '🚗',
-    'cabeleireiro': '✂️'
-  };
-
   return (
     <div className="flex flex-col flex-1 pb-16 bg-white overflow-y-auto">
 
@@ -56,26 +53,18 @@ export default async function HomePage() {
           <Link href="/brasilia-df" className="hs-btn mt-2 text-center">Buscar profissionais</Link>
         </div>
 
-        <div className="hero-stats">
-          <div className="hs-stat"><div className="hs-stat-n">487k</div><div className="hs-stat-l">Profissionais</div></div>
-          <div className="hs-stat"><div className="hs-stat-n">406</div><div className="hs-stat-l">Cidades</div></div>
-          <div className="hs-stat"><div className="hs-stat-n">4.8★</div><div className="hs-stat-l">Média</div></div>
-        </div>
+        <StatsRow stats={[
+          { value: '487k', label: 'Profissionais' },
+          { value: '406', label: 'Cidades' },
+          { value: '4.8★', label: 'Média' },
+        ]} />
       </section>
 
       {/* 2. SERVICES GRID */}
       <section className="section">
-        <div className="section-head">
-          <span className="section-title">Serviços em destaque</span>
-          <Link href="/busca" className="see-all">Ver todos →</Link>
-        </div>
+        <SectionHeader title="Serviços em destaque" href="/busca" />
         <div className="service-grid">
-          {topServicos.map(s => (
-            <Link href={`/brasilia-df/${s.slug}`} key={s.id} className="sg-item">
-              <span className="sg-icon">{fallbackIcons[s.slug] || '💼'}</span>
-              <span className="sg-name">{s.nome}</span>
-            </Link>
-          ))}
+          {topServicos.map(s => <ServiceCard key={s.id} servico={s} />)}
           <Link href="/busca" className="sg-item">
             <span className="sg-icon">＋</span>
             <span className="sg-name">Ver mais</span>
@@ -87,9 +76,7 @@ export default async function HomePage() {
 
       {/* 3. CITIES */}
       <section className="section">
-        <div className="section-head">
-          <span className="section-title">Cidades em destaque</span>
-        </div>
+        <SectionHeader title="Cidades em destaque" />
       </section>
       <div className="city-chips px-4 pb-4">
         {topCidades.map(c => (
@@ -105,43 +92,30 @@ export default async function HomePage() {
 
       {/* 4. FEATURED PROS */}
       <section className="section">
-        <div className="section-head">
-          <span className="section-title">⭐ Mais bem avaliados</span>
-          <Link href="/brasilia-df" className="see-all">Ver todos →</Link>
-        </div>
+        <SectionHeader title="⭐ Mais bem avaliados" href="/brasilia-df" />
       </section>
       <div className="featured-list">
-        {/* Mocked Featured Pros for homepage visual demonstration */}
-        <Link href="/brasilia-df/eletricista/joao-ricardo" className="featured-item">
-          <div className="fi-av" style={{ background: '#FEF3C7', color: '#B45309' }}>
-            JR<div className="fi-online"></div>
-          </div>
-          <div className="fi-info">
-            <div className="fi-name">João Ricardo Elétrica</div>
-            <div className="fi-meta">⚡ Eletricista · Asa Sul, Brasília · ★ 4.9 (38)</div>
-          </div>
-          <div className="fi-wa text-[20px]"><WhatsAppIcon /></div>
-        </Link>
-
-        <Link href="/brasilia-df/eletricista/marcos-silva" className="featured-item">
-          <div className="fi-av" style={{ background: '#EFF6FF', color: '#1D4ED8' }}>
-            MS<div className="fi-online"></div>
-          </div>
-          <div className="fi-info">
-            <div className="fi-name">Marcos Silva Eletricista</div>
-            <div className="fi-meta">⚡ Eletricista · Taguatinga, DF · ★ 4.7 (21)</div>
-          </div>
-          <div className="fi-wa text-[20px]"><WhatsAppIcon /></div>
-        </Link>
+        <FeaturedProviderItem
+          href="/brasilia-df/eletricista/joao-ricardo"
+          initials="JR"
+          bgStyle={{ background: '#FEF3C7', color: '#B45309' }}
+          nome="João Ricardo Elétrica"
+          meta="⚡ Eletricista · Asa Sul, Brasília · ★ 4.9 (38)"
+        />
+        <FeaturedProviderItem
+          href="/brasilia-df/eletricista/marcos-silva"
+          initials="MS"
+          bgStyle={{ background: '#EFF6FF', color: '#1D4ED8' }}
+          nome="Marcos Silva Eletricista"
+          meta="⚡ Eletricista · Taguatinga, DF · ★ 4.7 (21)"
+        />
       </div>
 
       <div className="divider" />
 
       {/* 5. HOW IT WORKS */}
       <section className="section">
-        <div className="section-head">
-          <span className="section-title">Como funciona</span>
-        </div>
+        <SectionHeader title="Como funciona" />
         <div className="how-grid mb-5">
           <div className="how-item"><div className="hi-num">01</div><div className="hi-title">Busque o serviço</div><div className="hi-desc">Digite o que precisa e sua cidade para ver profissionais disponíveis</div></div>
           <div className="how-item"><div className="hi-num">02</div><div className="hi-title">Compare avaliações</div><div className="hi-desc">Leia opiniões de moradores da sua cidade antes de decidir</div></div>
@@ -153,13 +127,7 @@ export default async function HomePage() {
       <div className="divider" />
 
       {/* 6. CTA */}
-      <div className="cta-home">
-        <h3>É prestador de serviço?</h3>
-        <p>Apareça para clientes da sua cidade e receba contatos direto no WhatsApp</p>
-        <div className="price">R$97 <small>/ano</small></div>
-        <div className="text-xs text-white/40 mb-4">ou cadastre-se grátis</div>
-        <Link href="/cadastro" className="hs-btn rounded-lg">Quero me cadastrar →</Link>
-      </div>
+      <CTABanner />
 
       <footer className="footer pb-safe">
         <div className="f-logo">Listas<em>Daqui</em></div>

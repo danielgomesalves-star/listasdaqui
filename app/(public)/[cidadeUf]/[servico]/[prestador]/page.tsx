@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { RatingBar } from '@/components/ui/RatingBar';
 
 const prisma = new PrismaClient();
 export const dynamic = 'force-static';
@@ -194,31 +195,11 @@ export default async function ProviderProfilePage({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[11px] text-text2 w-2 shrink-0">5</span>
-                        <div className="flex-1 h-[5px] bg-bg2 rounded-full overflow-hidden"><div className="h-full bg-gold rounded-full" style={{ width: '88%' }}></div></div>
-                        <span className="text-[11px] text-text3 w-5 text-right">33</span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[11px] text-text2 w-2 shrink-0">4</span>
-                        <div className="flex-1 h-[5px] bg-bg2 rounded-full overflow-hidden"><div className="h-full bg-border rounded-full" style={{ width: '8%' }}></div></div>
-                        <span className="text-[11px] text-text3 w-5 text-right">3</span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[11px] text-text2 w-2 shrink-0">3</span>
-                        <div className="flex-1 h-[5px] bg-bg2 rounded-full overflow-hidden"><div className="h-full bg-border rounded-full" style={{ width: '4%' }}></div></div>
-                        <span className="text-[11px] text-text3 w-5 text-right">2</span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[11px] text-text2 w-2 shrink-0">2</span>
-                        <div className="flex-1 h-[5px] bg-bg2 rounded-full overflow-hidden"><div className="h-full bg-gold rounded-full" style={{ width: '0%' }}></div></div>
-                        <span className="text-[11px] text-text3 w-5 text-right">0</span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[11px] text-text2 w-2 shrink-0">1</span>
-                        <div className="flex-1 h-[5px] bg-bg2 rounded-full overflow-hidden"><div className="h-full bg-gold rounded-full" style={{ width: '0%' }}></div></div>
-                        <span className="text-[11px] text-text3 w-5 text-right">0</span>
-                    </div>
+                    <RatingBar star={5} count={33} total={38} />
+                    <RatingBar star={4} count={3} total={38} />
+                    <RatingBar star={3} count={2} total={38} />
+                    <RatingBar star={2} count={0} total={38} />
+                    <RatingBar star={1} count={0} total={38} />
 
                     <div className="mt-3.5">
                         {prestador.avaliacoes?.map((av: any, i: number) => (
