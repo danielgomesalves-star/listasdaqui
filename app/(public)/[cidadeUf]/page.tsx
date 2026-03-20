@@ -2,10 +2,40 @@ import Link from 'next/link';
 import { PrismaClient } from '@prisma/client';
 import { notFound } from 'next/navigation';
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
+import type { Metadata } from 'next';
 
 const prisma = new PrismaClient();
 export const dynamic = 'force-static';
 export const revalidate = 3600;
+
+export async function generateMetadata({ params }: { params: { cidadeUf: string } }): Promise<Metadata> {
+    const cidade = await prisma.cidade.findUnique({ where: { slug: params.cidadeUf } });
+    if (!cidade) return {};
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://listasdaqui.com.br';
+    const title = `Prestadores de serviço em ${cidade.nome}, ${cidade.uf} | ListasDaqui`;
+    const description = `Encontre eletricistas, encanadores, pintores e muito mais em ${cidade.nome}. Profissionais avaliados por moradores da cidade.`;
+    const url = `${baseUrl}/${cidade.slug}`;
+    return {
+        title,
+        description,
+        alternates: { canonical: url },
+        openGraph: {
+            title,
+            description,
+            url,
+            siteName: 'ListasDaqui',
+            locale: 'pt_BR',
+            type: 'website',
+            images: [{ url: `${baseUrl}/og-default.png`, width: 1200, height: 630, alt: title }],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: [`${baseUrl}/og-default.png`],
+        },
+    };
+}
 
 export default async function CityPage({ params }: { params: { cidadeUf: string } }) {
     const cidade = await prisma.cidade.findUnique({ where: { slug: params.cidadeUf } });

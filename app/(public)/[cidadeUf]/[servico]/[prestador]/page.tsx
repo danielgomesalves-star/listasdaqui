@@ -2,10 +2,48 @@ import Link from 'next/link';
 import { PrismaClient } from '@prisma/client';
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 
 const prisma = new PrismaClient();
 export const dynamic = 'force-static';
 export const revalidate = 3600;
+
+type Props = { params: { cidadeUf: string, servico: string, prestador: string } }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { cidadeUf, servico: servicoSlug, prestador: prestadorSlug } = params;
+    const [cidade, servico, prestador] = await Promise.all([
+        prisma.cidade.findUnique({ where: { slug: cidadeUf } }),
+        prisma.servico.findUnique({ where: { slug: servicoSlug } }),
+        prisma.prestador.findUnique({ where: { slug: prestadorSlug } })
+    ]);
+    if (!cidade || !servico || !prestador) return {};
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://listasdaqui.com.br';
+    const title = `${prestador.nome} — ${servico.nome} em ${cidade.nome} | ListasDaqui`;
+    const description = prestador.bio?.substring(0, 160) || `${prestador.nome} é ${servico.nome.toLowerCase()} em ${cidade.nome}, ${cidade.uf}. Entre em contato pelo WhatsApp.`;
+    const url = `${baseUrl}/${cidade.slug}/${servico.slug}/${prestador.slug || prestador.id}`;
+    const image = prestador.foto || `${baseUrl}/og-default.png`;
+    return {
+        title,
+        description,
+        alternates: { canonical: url },
+        openGraph: {
+            title,
+            description,
+            url,
+            siteName: 'ListasDaqui',
+            locale: 'pt_BR',
+            type: 'profile',
+            images: [{ url: image, width: 1200, height: 630, alt: prestador.nome }],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: [image],
+        },
+    };
+}
 
 export default async function ProviderProfilePage({
     params
@@ -54,7 +92,56 @@ export default async function ProviderProfilePage({
         } as any;
     }
 
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://listasdaqui.com.br';
+    const pageUrl = `${baseUrl}/${cidade.slug}/${servico.slug}/${prestador.slug || prestador.id}`;
+
+    const totalAvaliacoes = prestador.avaliacoes?.length ?? 0;
+    const mediaNota = totalAvaliacoes > 0
+        ? prestador.avaliacoes.reduce((sum: number, av: any) => sum + av.nota, 0) / totalAvaliacoes
+        : null;
+
+    const jsonLd: Record<string, unknown>[] = [
+        {
+            '@type': 'BreadcrumbList',
+            'itemListElement': [
+                { '@type': 'ListItem', 'position': 1, 'name': 'Início', 'item': baseUrl },
+                { '@type': 'ListItem', 'position': 2, 'name': `${servico.nome} em ${cidade.nome}`, 'item': `${baseUrl}/${cidade.slug}/${servico.slug}` },
+                { '@type': 'ListItem', 'position': 3, 'name': prestador.nome, 'item': pageUrl }
+            ]
+        },
+        {
+            '@type': 'LocalBusiness',
+            'name': prestador.nome,
+            'description': prestador.descricao || undefined,
+            'url': pageUrl,
+            'telephone': prestador.telefone ? `+55${prestador.telefone}` : undefined,
+            'image': prestador.foto || undefined,
+            'address': {
+                '@type': 'PostalAddress',
+                'addressLocality': cidade.nome,
+                'addressRegion': cidade.uf,
+                'addressCountry': 'BR'
+            },
+            ...(mediaNota !== null && {
+                'aggregateRating': {
+                    '@type': 'AggregateRating',
+                    'ratingValue': mediaNota.toFixed(1),
+                    'reviewCount': totalAvaliacoes,
+                    'bestRating': 5,
+                    'worstRating': 1
+                }
+            })
+        }
+    ];
+
     return (
+        <>
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+                __html: JSON.stringify({ '@context': 'https://schema.org', '@graph': jsonLd })
+            }}
+        />
         <div className="flex flex-col flex-1 pb-16 bg-white overflow-y-auto">
 
             {/* 1. HERO PROFILE */}
@@ -193,5 +280,6 @@ export default async function ProviderProfilePage({
 
             </div>
         </div>
+        </>
     );
 }

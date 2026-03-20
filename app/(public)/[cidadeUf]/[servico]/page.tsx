@@ -20,9 +20,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const conteudo = await prisma.conteudo.findUnique({
         where: { servicoId_cidadeId: { servicoId: servico.id, cidadeId: cidade.id } }
     });
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://listasdaqui.com.br';
+    const title = conteudo?.titulo || `${servico.nome} em ${cidade.nome} | ListasDaqui`;
+    const description = conteudo?.descricao?.substring(0, 160) || `Encontre profissionais de ${servico.nome.toLowerCase()} em ${cidade.nome}, ${cidade.uf}.`;
+    const url = `${baseUrl}/${cidade.slug}/${servico.slug}`;
     return {
-        title: conteudo?.titulo || `${servico.nome} em ${cidade.nome} | ListasDaqui`,
-        description: conteudo?.descricao?.substring(0, 160) || `Encontre profissionais de ${servico.nome.toLowerCase()} em ${cidade.nome}, ${cidade.uf}.`
+        title,
+        description,
+        alternates: { canonical: url },
+        openGraph: {
+            title,
+            description,
+            url,
+            siteName: 'ListasDaqui',
+            locale: 'pt_BR',
+            type: 'website',
+            images: [{ url: `${baseUrl}/og-default.png`, width: 1200, height: 630, alt: title }],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: [`${baseUrl}/og-default.png`],
+        },
     };
 }
 
@@ -51,7 +71,53 @@ export default async function CategoryPage({ params }: Props) {
 
     const faqs: Array<{ pergunta: string; resposta: string }> = Array.isArray(conteudo?.faqJson) ? conteudo.faqJson as any : [];
 
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://listasdaqui.com.br';
+    const pageUrl = `${baseUrl}/${cidade.slug}/${servico.slug}`;
+
+    const jsonLd: Record<string, unknown>[] = [
+        {
+            '@type': 'BreadcrumbList',
+            'itemListElement': [
+                { '@type': 'ListItem', 'position': 1, 'name': 'Início', 'item': baseUrl },
+                { '@type': 'ListItem', 'position': 2, 'name': servico.nome, 'item': pageUrl },
+                { '@type': 'ListItem', 'position': 3, 'name': `${servico.nome} em ${cidade.nome}` }
+            ]
+        }
+    ];
+
+    if (prestadores.length > 0) {
+        jsonLd.push({
+            '@type': 'ItemList',
+            'name': `${servico.nome} em ${cidade.nome}`,
+            'description': conteudo?.descricao?.substring(0, 160) || undefined,
+            'itemListElement': prestadores.map((p, i) => ({
+                '@type': 'ListItem',
+                'position': i + 1,
+                'name': p.nome,
+                'url': `${pageUrl}/${p.slug || p.id}`
+            }))
+        });
+    }
+
+    if (faqs.length > 0) {
+        jsonLd.push({
+            '@type': 'FAQPage',
+            'mainEntity': faqs.map(faq => ({
+                '@type': 'Question',
+                'name': faq.pergunta,
+                'acceptedAnswer': { '@type': 'Answer', 'text': faq.resposta }
+            }))
+        });
+    }
+
     return (
+        <>
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+                __html: JSON.stringify({ '@context': 'https://schema.org', '@graph': jsonLd })
+            }}
+        />
         <div className="flex flex-col flex-1 pb-16 bg-white overflow-hidden">
 
             {/* TOPBAR */}
@@ -215,5 +281,6 @@ export default async function CategoryPage({ params }: Props) {
 
             </div>
         </div>
+        </>
     );
 }
