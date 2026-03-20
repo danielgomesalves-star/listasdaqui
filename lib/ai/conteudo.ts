@@ -75,17 +75,26 @@ export async function gerarConteudoIA(params: {
     cidadeUF: string;
 }) {
     const { servicoId, cidadeId, servicoNome, cidadeNome, cidadeUF } = params;
-    logger.info({ event: 'ai.conteudo.gerar.init', servicoNome, cidadeNome });
 
     const provider = await getProvider();
+    logger.info({ event: 'ai.conteudo.gerar.start', provider, servicoNome, cidadeNome });
+
     const prompt = PROMPT_BASE(servicoNome, cidadeNome, cidadeUF);
 
     let cleanText = '';
     try {
         if (provider === 'openai') {
+            logger.info({ event: 'ai.conteudo.call_openai.init' });
             cleanText = await chamarOpenAI(prompt);
+            logger.info({ event: 'ai.conteudo.call_openai.success' });
         } else {
+            logger.info({ event: 'ai.conteudo.call_anthropic.init' });
             cleanText = await chamarAnthropic(prompt);
+            logger.info({ event: 'ai.conteudo.call_anthropic.success' });
+        }
+
+        if (!cleanText) {
+            throw new Error('Resposta da IA veio vazia');
         }
 
         const data = JSON.parse(cleanText);
@@ -117,10 +126,15 @@ export async function gerarConteudoIA(params: {
             },
         });
 
-        logger.info({ event: 'ai.conteudo.gerar.success', provider, servicoNome, cidadeNome });
+        logger.info({ event: 'ai.conteudo.gerar.db_saved', servicoNome, cidadeNome });
         return { success: true, data: conteudo };
     } catch (error) {
-        logger.error({ event: 'ai.conteudo.gerar.error', provider, error: String(error), raw: cleanText });
-        throw new Error(`Falha na geração via ${provider}: ` + String(error));
+        logger.error({
+            event: 'ai.conteudo.gerar.failed',
+            provider,
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
+        });
+        throw error;
     }
 }
