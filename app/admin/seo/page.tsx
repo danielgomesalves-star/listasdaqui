@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
+import ManualEditModal from './components/ManualEditModal'
+
 async function fetchConteudo(filter: string) {
     const token = localStorage.getItem('adminToken')
     if (!token) throw new Error('Não autenticado')
@@ -18,6 +20,8 @@ async function fetchConteudo(filter: string) {
 
 export default function SeoManagerPage() {
     const [filter, setFilter] = useState('todos')
+    const [selectedItem, setSelectedItem] = useState<any>(null)
+    const [isModalOpen, setIsModalOpen] = useState(false)
     const queryClient = useQueryClient()
 
     const { data, isLoading, error } = useQuery({
@@ -55,6 +59,11 @@ export default function SeoManagerPage() {
         generateMutation.mutate()
     }
 
+    const openEditModal = (item: any) => {
+        setSelectedItem(item)
+        setIsModalOpen(true)
+    }
+
     const stats = data?.stats || { totalGeradas: 0, totalFaltando: 0 }
     const percentual = Math.round((stats.totalGeradas / Math.max(1, stats.totalGeradas + stats.totalFaltando)) * 100) || 0
 
@@ -66,13 +75,15 @@ export default function SeoManagerPage() {
                     <p className="text-text3 text-sm font-semibold max-w-xl">Gerencie as páginas otimizadas para busca local geradas via Inteligência Artificial.</p>
                 </div>
 
-                <button
-                    onClick={handleSimularGeracao}
-                    disabled={generateMutation.isPending || stats.totalFaltando === 0}
-                    className="bg-accent text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-black transition-colors disabled:opacity-50 whitespace-nowrap"
-                >
-                    {generateMutation.isPending ? 'Gerando com IA...' : '✨ Iniciar Geração em Lote'}
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleSimularGeracao}
+                        disabled={generateMutation.isPending || stats.totalFaltando === 0}
+                        className="bg-accent text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-black transition-colors disabled:opacity-50 whitespace-nowrap"
+                    >
+                        {generateMutation.isPending ? 'Gerando com IA...' : '✨ Iniciar Geração em Lote'}
+                    </button>
+                </div>
             </div>
 
             {error ? (
@@ -134,7 +145,12 @@ export default function SeoManagerPage() {
                                         )}
                                     </td>
                                     <td className="p-4 text-right">
-                                        {p.status === 'gerado' && <button className="border border-border px-3 py-1.5 rounded-lg font-bold hover:bg-bg text-text3 text-xs">Editar Metas</button>}
+                                        <button
+                                            onClick={() => openEditModal(p)}
+                                            className="bg-bg border border-border px-3 py-1.5 rounded-lg font-bold hover:bg-white text-text3 text-xs transition-colors"
+                                        >
+                                            {p.status === 'gerado' ? 'Editar/Personalizar' : '✨ Gerar Manual'}
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
@@ -142,6 +158,13 @@ export default function SeoManagerPage() {
                     </table>
                 )}
             </div>
+
+            <ManualEditModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                item={selectedItem}
+                onSuccess={() => queryClient.invalidateQueries({ queryKey: ['seo-conteudo'] })}
+            />
         </div>
     )
 }

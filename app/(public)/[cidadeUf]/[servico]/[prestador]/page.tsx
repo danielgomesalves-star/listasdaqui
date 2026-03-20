@@ -25,7 +25,7 @@ export default async function ProviderProfilePage({
     }
 
     // 2. Fetch Provider or fallback to Mock to allow visual preview before seeding
-    let prestador = await prisma.prestador.findUnique({
+    let prestador: any = await prisma.prestador.findUnique({
         where: { slug: prestadorSlug },
         include: {
             avaliacoes: true

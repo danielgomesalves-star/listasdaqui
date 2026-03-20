@@ -6,6 +6,8 @@ import { promisify } from 'util'
 
 const execAsync = promisify(exec)
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
     const inicio = Date.now()
     const checks: Record<string, string> = {}

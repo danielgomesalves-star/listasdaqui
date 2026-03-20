@@ -11,7 +11,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const decoded = await verifyAdminToken(token)
     if (!decoded) return NextResponse.json({ error: 'Token invalido' }, { status: 401 })
 
-    const adminId = decoded.adminId
+    const adminId = decoded.id
     const reqBody = await req.json()
     const { motivo, detalhes } = reqBody
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     try {
         // Registra rejeição SEM deletar — prestador pode corrigir
         await prisma.$transaction([
-            prisma.rejeicao.create({
+            (prisma as any).rejeicao.create({
                 data: { prestadorId: params.id, adminId: adminId, motivo, detalhes }
             }),
             prisma.prestador.update({

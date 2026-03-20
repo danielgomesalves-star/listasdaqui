@@ -44,3 +44,8 @@ export async function verifyRefreshToken(token: string): Promise<any | null> {
         return null
     }
 }
+
+export async function authenticate(req: Request) {
+    const token = req.headers.get('authorization')?.split(' ')[1] || ''
+    return await verifyAccessToken(token)
+}
