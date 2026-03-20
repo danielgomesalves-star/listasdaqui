@@ -1,16 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import ManualEditModal from './components/ManualEditModal'
 
-async function fetchConteudo(filter: string) {
+async function fetchConteudo(filter: string, pagina: number = 1) {
     const token = localStorage.getItem('adminToken')
     if (!token) throw new Error('Não autenticado')
 
-    const res = await fetch(`/api/admin/seo/conteudo?status=${filter}&porPagina=50`, {
+    const res = await fetch(`/api/admin/seo/conteudo?status=${filter}&porPagina=50&pagina=${pagina}`, {
         headers: { 'Authorization': `Bearer ${token}` }
     })
 
@@ -21,14 +21,35 @@ async function fetchConteudo(filter: string) {
 
 export default function SeoManagerPage() {
     const [filter, setFilter] = useState('todos')
+    const [pagina, setPagina] = useState(1)
+    const [itens, setItens] = useState<any[]>([])
+
     const [selectedItem, setSelectedItem] = useState<any>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const queryClient = useQueryClient()
 
-    const { data, isLoading, error } = useQuery({
-        queryKey: ['seo-conteudo', filter],
-        queryFn: () => fetchConteudo(filter),
+    const { data, isLoading, error, isPlaceholderData } = useQuery({
+        queryKey: ['seo-conteudo', filter, pagina],
+        queryFn: () => fetchConteudo(filter, pagina),
     })
+
+    // Atualiza a lista acumulada quando novos dados chegam
+    useEffect(() => {
+        if (data?.itens) {
+            if (pagina === 1) {
+                setItens(data.itens)
+            } else {
+                setItens(prev => [...prev, ...data.itens])
+            }
+        }
+    }, [data, pagina])
+
+    // Reseta página ao mudar filtro
+    const handleFilterChange = (newFilter: string) => {
+        setFilter(newFilter)
+        setPagina(1)
+        setItens([])
+    }
 
     // Mutation for generating mock content
     const generateMutation = useMutation({
@@ -106,9 +127,9 @@ export default function SeoManagerPage() {
             )}
 
             <div className="flex gap-2 mb-6">
-                <button onClick={() => setFilter('todos')} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === 'todos' ? 'bg-text text-white' : 'bg-white border border-border text-text3'}`}>Ver Todos</button>
-                <button onClick={() => setFilter('faltando')} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === 'faltando' ? 'bg-orange-500 text-white' : 'bg-white border border-border text-text3'}`}>Faltando Conteúdo</button>
-                <button onClick={() => setFilter('gerado')} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === 'gerado' ? 'bg-green-600 text-white' : 'bg-white border border-border text-text3'}`}>Indexadas (Prontas) </button>
+                <button onClick={() => handleFilterChange('todos')} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === 'todos' ? 'bg-text text-white' : 'bg-white border border-border text-text3'}`}>Ver Todos</button>
+                <button onClick={() => handleFilterChange('faltando')} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === 'faltando' ? 'bg-orange-500 text-white' : 'bg-white border border-border text-text3'}`}>Faltando Conteúdo</button>
+                <button onClick={() => handleFilterChange('gerado')} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === 'gerado' ? 'bg-green-600 text-white' : 'bg-white border border-border text-text3'}`}>Indexadas (Prontas) </button>
             </div>
 
             <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden min-h-[300px]">
@@ -117,7 +138,7 @@ export default function SeoManagerPage() {
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mb-4"></div>
                         Lendo banco de dados...
                     </div>
-                ) : !data?.itens || data.itens.length === 0 ? (
+                ) : itens.length === 0 ? (
                     <div className="p-10 text-center font-bold text-text3">Nenhuma página encontrada com este filtro.</div>
                 ) : (
                     <table className="w-full text-left">
@@ -130,7 +151,7 @@ export default function SeoManagerPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border text-sm">
-                            {data.itens.map((p: any, i: number) => (
+                            {itens.map((p: any, i: number) => (
                                 <tr key={i} className="hover:bg-gray-50 transition-colors">
                                     <td className="p-4 font-bold text-text">
                                         /{p.cidadeNome.toLowerCase().replace(/\s+/g, '-')}-{p.uf.toLowerCase()}/{p.servicoNome.toLowerCase().replace(/\s+/g, '-')}/
@@ -159,6 +180,20 @@ export default function SeoManagerPage() {
                     </table>
                 )}
             </div>
+
+            {/* Paginação */}
+            {data?.totalPaginas > pagina && (
+                <div className="mt-6 flex justify-center">
+                    <button
+                        onClick={() => setPagina(prev => prev + 1)}
+                        disabled={isLoading}
+                        className="bg-white border border-border px-8 py-3 rounded-xl font-bold text-text3 hover:bg-bg transition-colors shadow-sm disabled:opacity-50 flex items-center gap-3"
+                    >
+                        {isLoading && <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>}
+                        Carregar Mais (+50 itens)
+                    </button>
+                </div>
+            )}
 
             <ManualEditModal
                 isOpen={isModalOpen}

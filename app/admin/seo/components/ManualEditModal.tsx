@@ -191,10 +191,25 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-text3 uppercase mb-4">Perguntas Frequentes (FAQ)</label>
+                        <div className="flex justify-between items-center mb-4">
+                            <label className="block text-xs font-bold text-text3 uppercase">Perguntas Frequentes (FAQ)</label>
+                            <button
+                                onClick={() => setFormData({ ...formData, faq: [...formData.faq, { pergunta: '', resposta: '' }] })}
+                                className="text-accent text-xs font-bold hover:underline"
+                            >
+                                ➕ ADICIONAR PERGUNTA
+                            </button>
+                        </div>
                         <div className="space-y-4">
                             {formData.faq.map((q, idx) => (
-                                <div key={idx} className="bg-bg p-4 rounded-xl border border-border space-y-2">
+                                <div key={idx} className="bg-bg p-4 rounded-xl border border-border space-y-2 relative group">
+                                    <button
+                                        onClick={() => setFormData({ ...formData, faq: formData.faq.filter((_, i) => i !== idx) })}
+                                        className="absolute -top-2 -right-2 bg-red-100 text-red-600 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm text-xs font-bold"
+                                        title="Remover"
+                                    >
+                                        ✕
+                                    </button>
                                     <input
                                         type="text"
                                         placeholder="Pergunta"
@@ -211,7 +226,15 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
                                 </div>
                             ))}
                             {formData.faq.length === 0 && (
-                                <p className="text-center text-xs text-text3 italic">Nenhuma pergunta cadastrada. Use a IA para sugerir.</p>
+                                <div className="border-2 border-dashed border-border p-8 rounded-xl text-center">
+                                    <p className="text-xs text-text3 italic mb-2">Nenhuma pergunta cadastrada.</p>
+                                    <button
+                                        onClick={() => setFormData({ ...formData, faq: [{ pergunta: '', resposta: '' }] })}
+                                        className="bg-bg border border-border text-text3 px-4 py-2 rounded-lg text-xs font-bold hover:bg-white"
+                                    >
+                                        Começar Manualmente
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </div>

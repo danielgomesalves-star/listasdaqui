@@ -2,12 +2,37 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import ModerationDetailsModal from '@/components/admin/ModerationDetailsModal'
+import ConfirmModal from '@/components/admin/ConfirmModal'
 
 export default function ModeraPrestadores() {
     const router = useRouter()
     const [data, setData] = useState<any[]>([])
     const [filter, setFilter] = useState('pendentes')
     const [loading, setLoading] = useState(true)
+
+    const [selectedPrestador, setSelectedPrestador] = useState<any>(null)
+    const [isModalOpen, setIsModalOpen] = useState(false)
+
+    // Estado do Modal de Confirmação
+    const [confirmConfig, setConfirmConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        confirmText: string;
+        confirmColor: string;
+        showInput: boolean;
+        onConfirm: (val?: string) => void;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        confirmText: '',
+        confirmColor: 'bg-black',
+        showInput: false,
+        onConfirm: () => { }
+    })
 
     async function fetchPrestadores(status: string) {
         setLoading(true)
@@ -32,15 +57,39 @@ export default function ModeraPrestadores() {
         fetchPrestadores(filter)
     }, [filter])
 
-    const handleAction = async (id: string, action: 'aprovar' | 'bloquear') => {
+    const handleAction = async (id: string, action: 'aprovar' | 'bloquear', motivo?: string) => {
         const token = localStorage.getItem('adminToken')
+
+        if (action === 'bloquear' && !motivo) {
+            setConfirmConfig({
+                isOpen: true,
+                title: 'Bloquear Ficha',
+                message: 'Explique o motivo do bloqueio para o prestador:',
+                confirmText: 'Confirmar Bloqueio',
+                confirmColor: 'bg-red-600',
+                showInput: true,
+                onConfirm: (val) => handleAction(id, action, val)
+            })
+            return
+        }
+
+        if (action === 'aprovar' && !motivo) {
+            setConfirmConfig({
+                isOpen: true,
+                title: 'Aprovar Ficha',
+                message: 'Você confirma que esta ficha está de acordo com as regras e pode ficar pública?',
+                confirmText: 'Sim, Aprovar',
+                confirmColor: 'bg-green-600',
+                showInput: false,
+                onConfirm: () => handleAction(id, action, 'aprovado')
+            })
+            return
+        }
 
         let url = `/api/admin/prestadores/${id}/aprovar`
         let body: any = {}
 
         if (action === 'bloquear') {
-            const motivo = prompt('Motivo do bloqueio:')
-            if (!motivo) return
             url = `/api/admin/prestadores/${id}/bloquear-ficha`
             body = { motivo }
         }
@@ -58,12 +107,12 @@ export default function ModeraPrestadores() {
             if (res.ok) {
                 // Refresh local view
                 setData(data.filter(p => action === 'aprovar' ? filter !== 'pendentes' : p.id !== id))
-                if (action === 'aprovar' && filter === 'pendentes') alert('Aprovado com sucesso!')
+                toast.success(action === 'aprovar' ? 'Ficha aprovada com sucesso!' : 'Ficha bloqueada.')
             } else {
-                alert('Falha ao executar ação.')
+                toast.error('Falha ao executar ação no servidor.')
             }
         } catch {
-            alert('Erro de conexão')
+            toast.error('Erro de conexão com a API.')
         }
     }
 
@@ -117,7 +166,15 @@ export default function ModeraPrestadores() {
                                         {p.ativo === true && (
                                             <button onClick={() => handleAction(p.id, 'bloquear')} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-bold hover:bg-red-100">Bloquear Ficha</button>
                                         )}
-                                        <a href={`/${p.cidade?.slug}/${p.servico?.slug}/${p.slug}`} target="_blank" className="inline-block border border-border px-3 py-1.5 rounded-lg font-bold hover:bg-bg text-text3">🌐 Ver</a>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedPrestador(p);
+                                                setIsModalOpen(true);
+                                            }}
+                                            className="inline-block border border-border px-3 py-1.5 rounded-lg font-bold hover:bg-bg text-text3 transition-colors"
+                                        >
+                                            👁️ Detalhes
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
@@ -125,6 +182,21 @@ export default function ModeraPrestadores() {
                     </table>
                 )}
             </div>
+
+            <ModerationDetailsModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                prestador={selectedPrestador}
+                onAction={(action, id, motivo) => {
+                    handleAction(id, action, motivo);
+                    setIsModalOpen(false);
+                }}
+            />
+
+            <ConfirmModal
+                {...confirmConfig}
+                onClose={() => setConfirmConfig({ ...confirmConfig, isOpen: false })}
+            />
         </div>
     )
 }
