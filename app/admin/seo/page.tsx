@@ -14,8 +14,9 @@ async function fetchConteudo(filter: string) {
         headers: { 'Authorization': `Bearer ${token}` }
     })
 
-    if (!res.ok) throw new Error('Falha ao consultar banco')
-    return res.json()
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Falha ao consultar banco')
+    return json
 }
 
 export default function SeoManagerPage() {

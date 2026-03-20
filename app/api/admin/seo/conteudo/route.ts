@@ -65,6 +65,6 @@ export async function GET(req: NextRequest) {
         })
     } catch (error) {
         console.error('Erro na SEO api:', error)
-        return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+        return NextResponse.json({ error: String(error) }, { status: 500 })
     }
 }
