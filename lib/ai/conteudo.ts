@@ -22,7 +22,7 @@ export async function gerarConteudoIA(params: {
     logger.info({ event: 'ai.conteudo.gerar.init', servicoNome, cidadeNome });
 
     const response = await (await getAnthropicClient()).messages.create({
-        model: 'claude-3-5-sonnet-20240620',
+        model: 'claude-3-5-sonnet-latest',
         max_tokens: 2048,
         messages: [
             {
