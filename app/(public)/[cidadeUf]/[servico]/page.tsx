@@ -2,12 +2,31 @@ import Link from 'next/link';
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import { PrismaClient } from '@prisma/client';
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 
 const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
-export default async function CategoryPage({ params }: { params: { cidadeUf: string, servico: string } }) {
+type Props = { params: { cidadeUf: string, servico: string } }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { cidadeUf, servico: servicoSlug } = params;
+    const [cidade, servico] = await Promise.all([
+        prisma.cidade.findUnique({ where: { slug: cidadeUf } }),
+        prisma.servico.findUnique({ where: { slug: servicoSlug } })
+    ]);
+    if (!cidade || !servico) return {};
+    const conteudo = await prisma.conteudo.findUnique({
+        where: { servicoId_cidadeId: { servicoId: servico.id, cidadeId: cidade.id } }
+    });
+    return {
+        title: conteudo?.titulo || `${servico.nome} em ${cidade.nome} | ListasDaqui`,
+        description: conteudo?.descricao?.substring(0, 160) || `Encontre profissionais de ${servico.nome.toLowerCase()} em ${cidade.nome}, ${cidade.uf}.`
+    };
+}
+
+export default async function CategoryPage({ params }: Props) {
     const { cidadeUf, servico: servicoSlug } = params;
 
     const [cidade, servico] = await Promise.all([
@@ -19,11 +38,18 @@ export default async function CategoryPage({ params }: { params: { cidadeUf: str
         notFound();
     }
 
-    const prestadores = await prisma.prestador.findMany({
-        where: { cidadeId: cidade.id, servicoId: servico.id, ativo: true, aprovado: true },
-        orderBy: [{ plano: 'desc' }, { createdAt: 'asc' }],
-        take: 20
-    });
+    const [prestadores, conteudo] = await Promise.all([
+        prisma.prestador.findMany({
+            where: { cidadeId: cidade.id, servicoId: servico.id, ativo: true, aprovado: true },
+            orderBy: [{ plano: 'desc' }, { createdAt: 'asc' }],
+            take: 20
+        }),
+        prisma.conteudo.findUnique({
+            where: { servicoId_cidadeId: { servicoId: servico.id, cidadeId: cidade.id } }
+        })
+    ]);
+
+    const faqs: Array<{ pergunta: string; resposta: string }> = Array.isArray(conteudo?.faqJson) ? conteudo.faqJson as any : [];
 
     return (
         <div className="flex flex-col flex-1 pb-16 bg-white overflow-hidden">
@@ -57,7 +83,6 @@ export default async function CategoryPage({ params }: { params: { cidadeUf: str
                     <button className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold border-1.5 border-text bg-text text-white whitespace-nowrap shrink-0">Todos</button>
                     <button className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold border-1.5 border-border bg-bg2 text-text2 hover:border-text transition-colors whitespace-nowrap shrink-0">✓ Verificados</button>
                     <button className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold border-1.5 border-border bg-bg2 text-text2 hover:border-text transition-colors whitespace-nowrap shrink-0">⭐ Melhor avaliados</button>
-                    <button className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold border-1.5 border-border bg-bg2 text-text2 hover:border-text transition-colors whitespace-nowrap shrink-0">📍 Centro</button>
                 </div>
 
                 {/* SUMMARY */}
@@ -71,12 +96,9 @@ export default async function CategoryPage({ params }: { params: { cidadeUf: str
                     {prestadores.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                             <div className="text-5xl mb-4">🔍</div>
-                            <h3 className="text-lg font-black text-text mb-2">Nenhum profissional encontrado</h3>
+                            <h2 className="text-lg font-black text-text mb-2">Nenhum profissional encontrado</h2>
                             <p className="text-sm text-text3 mb-6">Ainda não temos profissionais de {servico.nome.toLowerCase()} cadastrados em {cidade.nome}. Seja o primeiro!</p>
-                            <Link
-                                href="/cadastro"
-                                className="bg-text text-white px-6 py-3 rounded-xl font-bold text-sm no-underline hover:opacity-90 transition-opacity"
-                            >
+                            <Link href="/cadastro" className="bg-text text-white px-6 py-3 rounded-xl font-bold text-sm no-underline hover:opacity-90 transition-opacity">
                                 Anunciar meu serviço →
                             </Link>
                         </div>
@@ -101,21 +123,15 @@ export default async function CategoryPage({ params }: { params: { cidadeUf: str
                                                 {initials}
                                             </div>
                                         )}
-                                        {isPago && (
-                                            <div className="absolute bottom-0.5 right-0.5 w-[14px] h-[14px] bg-green rounded-full border-2 border-white"></div>
-                                        )}
+                                        {isPago && <div className="absolute bottom-0.5 right-0.5 w-[14px] h-[14px] bg-green rounded-full border-2 border-white"></div>}
                                     </div>
                                     <div className="flex-1 min-w-0 pt-0.5">
                                         <div className="flex items-center gap-1.5 mb-1">
                                             <span className={`text-lg font-black tracking-tight truncate max-w-[200px] ${isPago ? 'text-text' : 'text-text2'}`}>{p.nome}</span>
                                             {isPago && <span className="text-accent text-[13px] tracking-[-2px] shrink-0">✓✓</span>}
                                         </div>
-                                        {p.bio && (
-                                            <div className="text-[13.5px] text-text2 mb-1.5 truncate">{p.bio}</div>
-                                        )}
-                                        <div className="flex items-center gap-1.5 text-[13px] text-text2 flex-wrap">
-                                            <span>{cidade.nome}</span>
-                                        </div>
+                                        {p.bio && <div className="text-[13.5px] text-text2 mb-1.5 truncate">{p.bio}</div>}
+                                        <div className="text-[13px] text-text3">{cidade.nome}</div>
                                     </div>
                                     <div className={`absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-[22px] ${isPago ? 'bg-wa shadow-[0_4px_14px_rgba(37,211,102,0.35)] text-white' : 'bg-bg2 border-2 border-dashed border-border cursor-not-allowed'}`}>
                                         {isPago ? <WhatsAppIcon /> : '🔒'}
@@ -140,26 +156,52 @@ export default async function CategoryPage({ params }: { params: { cidadeUf: str
                     </div>
                 </Link>
 
-                {/* SEO SECTION */}
-                <div className="px-4 pt-2 pb-4 bg-white">
-                    <div className="bg-bg2 rounded-[18px] p-5">
-                        <h2 className="text-[15px] font-extrabold text-text tracking-tight mb-2">Como contratar {servico.nome.toLowerCase()} em {cidade.nome}</h2>
-                        <p className="text-[13px] text-text2 leading-relaxed mb-2">
-                            {cidade.nome} tem profissionais qualificados disponíveis. Verifique o orçamento e confira as avaliações de outros moradores.
-                        </p>
+                {/* SEO CONTENT (from database) */}
+                {conteudo && (
+                    <div className="px-4 pt-2 pb-4 bg-white">
+                        <div className="bg-bg2 rounded-[18px] p-5">
+                            <h1 className="text-[17px] font-extrabold text-text tracking-tight mb-3">{conteudo.titulo}</h1>
+                            <p className="text-[13px] text-text2 leading-relaxed mb-4">{conteudo.descricao}</p>
 
-                        <h2 className="text-[15px] font-extrabold text-text tracking-tight mb-2 mt-4">Perguntas frequentes</h2>
-                        <div className="border-t border-border pt-3 mt-3">
-                            <div className="flex justify-between items-start gap-2.5 cursor-pointer mb-1.5">
-                                <div className="text-[13px] font-bold text-text tracking-tight">Qual o prazo médio do serviço?</div>
-                                <div className="w-5 h-5 bg-border rounded-full flex items-center justify-center text-[13px] font-bold text-text2 shrink-0 leading-none">+</div>
-                            </div>
-                            <div className="text-[12.5px] text-text2 leading-relaxed pb-1">
-                                Serviços simples no mesmo dia. Serviços complexos em média de 2 a 5 dias úteis.
-                            </div>
+                            {/* PREÇOS */}
+                            {(conteudo.precoMin || conteudo.precoMax) && (
+                                <>
+                                    <h2 className="text-[15px] font-extrabold text-text tracking-tight mb-2">Preços médios em {cidade.nome}</h2>
+                                    <div className="grid grid-cols-2 gap-2 my-2.5">
+                                        {conteudo.precoMin && (
+                                            <div className="bg-white rounded-xl p-3 border border-border">
+                                                <div className="text-[10px] font-semibold text-text3 uppercase tracking-wider mb-1">A partir de</div>
+                                                <div className="text-base font-extrabold text-text tracking-tight">R${conteudo.precoMin}</div>
+                                            </div>
+                                        )}
+                                        {conteudo.precoMax && (
+                                            <div className="bg-white rounded-xl p-3 border border-border">
+                                                <div className="text-[10px] font-semibold text-text3 uppercase tracking-wider mb-1">Até</div>
+                                                <div className="text-base font-extrabold text-text tracking-tight">R${conteudo.precoMax}</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* FAQs */}
+                            {faqs.length > 0 && (
+                                <>
+                                    <h2 className="text-[15px] font-extrabold text-text tracking-tight mb-2 mt-4">Perguntas frequentes</h2>
+                                    {faqs.map((faq, i) => (
+                                        <div key={i} className="border-t border-border pt-3 mt-3">
+                                            <div className="flex justify-between items-start gap-2.5 cursor-pointer mb-1.5">
+                                                <div className="text-[13px] font-bold text-text tracking-tight">{faq.pergunta}</div>
+                                                <div className="w-5 h-5 bg-border rounded-full flex items-center justify-center text-[13px] font-bold text-text2 shrink-0 leading-none">+</div>
+                                            </div>
+                                            <div className="text-[12.5px] text-text2 leading-relaxed pb-1">{faq.resposta}</div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
                         </div>
                     </div>
-                </div>
+                )}
 
             </div>
         </div>

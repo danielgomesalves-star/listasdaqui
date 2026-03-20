@@ -12,7 +12,7 @@
       "static/chunks/fd9d1056-656b2c1478ecc468.js",
       "static/chunks/117-921f8dadd8095511.js",
       "static/chunks/main-app-a25b2d34ad2be948.js",
-      "static/css/5b22be994cf66cc9.css",
+      "static/css/5fda0483846f81ab.css",
       "static/chunks/438-a8c94027c21ff6b9.js",
       "static/chunks/763-7cf33e70850845a4.js",
       "static/chunks/app/layout-400f0feb69fcaa31.js"
@@ -31,15 +31,7 @@
       "static/chunks/117-921f8dadd8095511.js",
       "static/chunks/main-app-a25b2d34ad2be948.js",
       "static/chunks/972-581f39db0361137d.js",
-      "static/chunks/app/(public)/layout-10abe7f8cc9effd9.js"
-    ],
-    "/(public)/sucesso/page": [
-      "static/chunks/webpack-541fee20f734dd72.js",
-      "static/chunks/fd9d1056-656b2c1478ecc468.js",
-      "static/chunks/117-921f8dadd8095511.js",
-      "static/chunks/main-app-a25b2d34ad2be948.js",
-      "static/chunks/972-581f39db0361137d.js",
-      "static/chunks/app/(public)/sucesso/page-730e0dd11529490f.js"
+      "static/chunks/app/(public)/layout-0941134f59386fc5.js"
     ],
     "/(public)/login/page": [
       "static/chunks/webpack-541fee20f734dd72.js",
@@ -48,6 +40,14 @@
       "static/chunks/main-app-a25b2d34ad2be948.js",
       "static/chunks/972-581f39db0361137d.js",
       "static/chunks/app/(public)/login/page-1a5e561d1c520eb5.js"
+    ],
+    "/(public)/sucesso/page": [
+      "static/chunks/webpack-541fee20f734dd72.js",
+      "static/chunks/fd9d1056-656b2c1478ecc468.js",
+      "static/chunks/117-921f8dadd8095511.js",
+      "static/chunks/main-app-a25b2d34ad2be948.js",
+      "static/chunks/972-581f39db0361137d.js",
+      "static/chunks/app/(public)/sucesso/page-fc6065348aea618e.js"
     ],
     "/admin/dashboard/page": [
       "static/chunks/webpack-541fee20f734dd72.js",
@@ -80,6 +80,14 @@
       "static/chunks/main-app-a25b2d34ad2be948.js",
       "static/chunks/app/admin/page-ed9757fae1020a67.js"
     ],
+    "/admin/prestadores/page": [
+      "static/chunks/webpack-541fee20f734dd72.js",
+      "static/chunks/fd9d1056-656b2c1478ecc468.js",
+      "static/chunks/117-921f8dadd8095511.js",
+      "static/chunks/main-app-a25b2d34ad2be948.js",
+      "static/chunks/438-a8c94027c21ff6b9.js",
+      "static/chunks/app/admin/prestadores/page-79f050d2c061a9aa.js"
+    ],
     "/admin/seo/page": [
       "static/chunks/webpack-541fee20f734dd72.js",
       "static/chunks/fd9d1056-656b2c1478ecc468.js",
@@ -89,14 +97,6 @@
       "static/chunks/763-7cf33e70850845a4.js",
       "static/chunks/713-dcfadddce9fa119a.js",
       "static/chunks/app/admin/seo/page-f1390a43db2d0500.js"
-    ],
-    "/admin/prestadores/page": [
-      "static/chunks/webpack-541fee20f734dd72.js",
-      "static/chunks/fd9d1056-656b2c1478ecc468.js",
-      "static/chunks/117-921f8dadd8095511.js",
-      "static/chunks/main-app-a25b2d34ad2be948.js",
-      "static/chunks/438-a8c94027c21ff6b9.js",
-      "static/chunks/app/admin/prestadores/page-79f050d2c061a9aa.js"
     ],
     "/(public)/cadastro/page": [
       "static/chunks/webpack-541fee20f734dd72.js",
@@ -112,7 +112,7 @@
       "static/chunks/117-921f8dadd8095511.js",
       "static/chunks/main-app-a25b2d34ad2be948.js",
       "static/chunks/972-581f39db0361137d.js",
-      "static/chunks/app/(public)/[cidadeUf]/page-1f4bc6582e9346f5.js"
+      "static/chunks/app/(public)/[cidadeUf]/page-4ac44f6e950402b7.js"
     ],
     "/(public)/[cidadeUf]/[servico]/[prestador]/page": [
       "static/chunks/webpack-541fee20f734dd72.js",
@@ -120,15 +120,7 @@
       "static/chunks/117-921f8dadd8095511.js",
       "static/chunks/main-app-a25b2d34ad2be948.js",
       "static/chunks/972-581f39db0361137d.js",
-      "static/chunks/app/(public)/[cidadeUf]/[servico]/[prestador]/page-12707bd0d44f2766.js"
-    ],
-    "/(public)/[cidadeUf]/[servico]/page": [
-      "static/chunks/webpack-541fee20f734dd72.js",
-      "static/chunks/fd9d1056-656b2c1478ecc468.js",
-      "static/chunks/117-921f8dadd8095511.js",
-      "static/chunks/main-app-a25b2d34ad2be948.js",
-      "static/chunks/972-581f39db0361137d.js",
-      "static/chunks/app/(public)/[cidadeUf]/[servico]/page-c94b2af41bb9fa1b.js"
+      "static/chunks/app/(public)/[cidadeUf]/[servico]/[prestador]/page-0c8441e5a5263a64.js"
     ],
     "/(public)/page": [
       "static/chunks/webpack-541fee20f734dd72.js",
@@ -137,6 +129,14 @@
       "static/chunks/main-app-a25b2d34ad2be948.js",
       "static/chunks/972-581f39db0361137d.js",
       "static/chunks/app/(public)/page-8bfffad241bca12d.js"
+    ],
+    "/(public)/[cidadeUf]/[servico]/page": [
+      "static/chunks/webpack-541fee20f734dd72.js",
+      "static/chunks/fd9d1056-656b2c1478ecc468.js",
+      "static/chunks/117-921f8dadd8095511.js",
+      "static/chunks/main-app-a25b2d34ad2be948.js",
+      "static/chunks/972-581f39db0361137d.js",
+      "static/chunks/app/(public)/[cidadeUf]/[servico]/page-c94b2af41bb9fa1b.js"
     ]
   }
 }
