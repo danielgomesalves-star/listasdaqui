@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { superAdminOnly, auditarAcao } from '@/middleware/super-admin'
-import { gerarConteudosSimulado } from '@/features/seo/seo.service'
+import { gerarConteudosSimulado, gerarConteudosLoteIA } from '@/features/seo/seo.service'
 
 export async function POST(req: NextRequest) {
     const admin = await superAdminOnly(req)
@@ -8,9 +8,13 @@ export async function POST(req: NextRequest) {
 
     try {
         const { modo } = await req.json()
-        const result = await gerarConteudosSimulado()
+        let result;
 
-        if (modo === 'simular' && result.message.startsWith('Simulada')) {
+        if (modo === 'ia') {
+            result = await gerarConteudosLoteIA()
+            await auditarAcao(admin.id, 'seo.geracao_ia_lote', {}, req)
+        } else {
+            result = await gerarConteudosSimulado()
             await auditarAcao(admin.id, 'seo.geracao_simulada', {}, req)
         }
 

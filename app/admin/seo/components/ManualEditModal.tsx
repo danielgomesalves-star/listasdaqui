@@ -167,7 +167,7 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
                     <div className="flex justify-between items-center bg-accent/5 p-4 rounded-xl border border-accent/10">
                         <div className="text-sm">
                             <p className="font-bold text-accent">Sugestão de Conteúdo</p>
-                            <p className="text-text3 text-xs">Deixe o Claude escrever a primeira versão para você.</p>
+                            <p className="text-text3 text-xs">Deixe a IA escrever a primeira versão para você.</p>
                         </div>
                         <button
                             onClick={handleGenerateAI}

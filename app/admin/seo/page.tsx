@@ -61,7 +61,7 @@ export default function SeoManagerPage() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ modo: 'simular' })
+                body: JSON.stringify({ modo: 'ia' })
             })
             const json = await res.json()
             if (!res.ok) throw new Error(json.error || 'Erro ao gerar')
@@ -77,7 +77,7 @@ export default function SeoManagerPage() {
     })
 
     const handleSimularGeracao = () => {
-        toast('Iniciando geração...', { description: 'Limitado a 50 páginas por vez no simulador.' })
+        toast('Iniciando geração...', { description: 'Processando lote de 5 páginas via IA por vez.' })
         generateMutation.mutate()
     }
 

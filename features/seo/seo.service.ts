@@ -30,7 +30,7 @@ export async function listarConteudos(params: {
         }
     })
 
-    const geradosMap = new Map(conteudosGerados.map(c => [`${c.servicoId}:${c.cidadeId}`, c]))
+    const geradosMap = new Map(conteudosGerados.map((c: any) => [`${c.servicoId}:${c.cidadeId}`, c]))
 
     const allCombos: any[] = []
 
@@ -48,7 +48,7 @@ export async function listarConteudos(params: {
                     cidadeNome: c.nome,
                     uf: c.uf,
                     status,
-                    ...conteudo
+                    ...conteudo as any
                 })
             }
         }
@@ -71,6 +71,58 @@ export async function listarConteudos(params: {
     }
 }
 
+export async function gerarConteudosLoteIA() {
+    const cidades = await prisma.cidade.findMany({ where: { ativo: true } })
+    const servicos = await prisma.servico.findMany({ where: { ativo: true } })
+    const conteudosGerados = await prisma.conteudo.findMany({
+        select: { servicoId: true, cidadeId: true }
+    })
+
+    const geradosSet = new Set(conteudosGerados.map(c => `${c.servicoId}:${c.cidadeId}`))
+    const missing: { servicoId: string; cidadeId: string; servicoNome: string; cidadeNome: string; uf: string }[] = []
+
+    for (const c of cidades) {
+        for (const s of servicos) {
+            if (!geradosSet.has(`${s.id}:${c.id}`)) {
+                missing.push({
+                    servicoId: s.id,
+                    cidadeId: c.id,
+                    servicoNome: s.nome,
+                    cidadeNome: c.nome,
+                    uf: c.uf
+                })
+            }
+        }
+    }
+
+    if (missing.length === 0) {
+        return { message: 'Todas as páginas já possuem conteúdo!' }
+    }
+
+    // Processa um pequeno lote (ex: 5 por vez para não estourar rate-limits ou timeout)
+    const lote = missing.slice(0, 5)
+
+    const promessas = lote.map(item =>
+        gerarConteudoIA({
+            servicoId: item.servicoId,
+            cidadeId: item.cidadeId,
+            servicoNome: item.servicoNome,
+            cidadeNome: item.cidadeNome,
+            cidadeUF: item.uf
+        }).catch(err => {
+            console.error(`Erro no lote para ${item.servicoNome}/${item.cidadeNome}:`, err)
+            return null
+        })
+    )
+
+    await Promise.all(promessas)
+
+    return {
+        message: `Geração em lote finalizada. ${lote.length} páginas processadas via IA.`,
+        success: true
+    }
+}
+
 export async function gerarConteudosSimulado() {
     const cidades = await prisma.cidade.findMany({ where: { ativo: true } })
     const servicos = await prisma.servico.findMany({ where: { ativo: true } })
@@ -89,14 +141,16 @@ export async function gerarConteudosSimulado() {
                     cidadeId: c.id,
                     titulo: `${s.nome} em ${c.nome} — Qualidade Garantida`,
                     descricao: `Encontre os melhores serviços de ${s.nome} em ${c.nome}, ${c.uf}. Profissionais avaliados e com garantia de qualidade na sua região. Peça orçamentos pelo WhatsApp.`,
+                    introducao: `Buscando por ${s.nome} em ${c.nome}? Nossa lista reúne os prestadores mais bem avaliados para garantir agilidade e confiança no seu atendimento.`,
+                    corpoTexto: `Se você está em ${c.nome} e precisa de ${s.nome}, chegou ao lugar certo. O ListasDaqui seleciona profissionais locais comprometidos com prazos e qualidade, facilitando sua busca e garantindo o melhor custo-benefício.`,
                     precoMin: 50,
                     precoMax: 300,
-                    faqJson: JSON.stringify([
+                    faqJson: [
                         {
                             pergunta: `Como escolher um bom ${s.nome} em ${c.nome}?`,
                             resposta: `Verifique sempre as avaliações no ListasDaqui, a experiência e certifique-se de perguntar o orçamento antecipadamente com fotos ou vídeos.`
                         }
-                    ])
+                    ]
                 })
             }
         }
@@ -109,7 +163,7 @@ export async function gerarConteudosSimulado() {
     const lote = missingCombos.slice(0, 50)
     await prisma.conteudo.createMany({ data: lote })
 
-    return { message: `Simulada criação de ${lote.length} páginas de SEO.` }
+    return { message: `Simulada criação de ${lote.length} páginas de SEO rápidas (sem IA).` }
 }
 
 export async function salvarConteudoManual(data: z.infer<typeof manualSchema>) {
