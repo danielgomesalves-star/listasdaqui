@@ -156,12 +156,22 @@ export default async function CategoryPage({ params }: Props) {
                     </div>
                 </Link>
 
-                {/* SEO CONTENT (from database) */}
+                {/* SEO CONTENT (from database) — collapsible */}
                 {conteudo && (
                     <div className="px-4 pt-2 pb-4 bg-white">
                         <div className="bg-bg2 rounded-[18px] p-5">
                             <h1 className="text-[17px] font-extrabold text-text tracking-tight mb-3">{conteudo.titulo}</h1>
-                            <p className="text-[13px] text-text2 leading-relaxed mb-4">{conteudo.descricao}</p>
+
+                            {/* Descrição com "ver mais" */}
+                            <details className="group mb-4">
+                                <summary className="list-none cursor-pointer">
+                                    <p className="text-[13px] text-text2 leading-relaxed line-clamp-3 group-open:line-clamp-none">
+                                        {conteudo.descricao}
+                                    </p>
+                                    <span className="text-[12px] font-semibold text-accent mt-1 inline-block group-open:hidden">Ver mais ↓</span>
+                                    <span className="text-[12px] font-semibold text-accent mt-1 hidden group-open:inline-block">Ver menos ↑</span>
+                                </summary>
+                            </details>
 
                             {/* PREÇOS */}
                             {(conteudo.precoMin || conteudo.precoMax) && (
@@ -184,18 +194,18 @@ export default async function CategoryPage({ params }: Props) {
                                 </>
                             )}
 
-                            {/* FAQs */}
+                            {/* FAQs — cada item colapsável */}
                             {faqs.length > 0 && (
                                 <>
                                     <h2 className="text-[15px] font-extrabold text-text tracking-tight mb-2 mt-4">Perguntas frequentes</h2>
                                     {faqs.map((faq, i) => (
-                                        <div key={i} className="border-t border-border pt-3 mt-3">
-                                            <div className="flex justify-between items-start gap-2.5 cursor-pointer mb-1.5">
+                                        <details key={i} className="border-t border-border pt-3 mt-3 group/faq">
+                                            <summary className="flex justify-between items-start gap-2.5 cursor-pointer list-none mb-1.5">
                                                 <div className="text-[13px] font-bold text-text tracking-tight">{faq.pergunta}</div>
-                                                <div className="w-5 h-5 bg-border rounded-full flex items-center justify-center text-[13px] font-bold text-text2 shrink-0 leading-none">+</div>
-                                            </div>
+                                                <div className="w-5 h-5 bg-border rounded-full flex items-center justify-center text-[13px] font-bold text-text2 shrink-0 leading-none group-open/faq:rotate-45 transition-transform">+</div>
+                                            </summary>
                                             <div className="text-[12.5px] text-text2 leading-relaxed pb-1">{faq.resposta}</div>
-                                        </div>
+                                        </details>
                                     ))}
                                 </>
                             )}
