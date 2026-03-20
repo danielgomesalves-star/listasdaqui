@@ -299,12 +299,4 @@ model Rejeicao {
   @@index([prestadorId, resolvida])
 }
 
-// ─────────────────────────────────────────────
-// CONFIGURAÇÕES DO SISTEMA (chave → valor)
-// ─────────────────────────────────────────────
 
-model Configuracao {
-  chave     String   @id  // ex: ANTHROPIC_API_KEY, OPENAI_API_KEY, AI_PROVIDER
-  valor     String   @db.Text
-  updatedAt DateTime @updatedAt
-}
