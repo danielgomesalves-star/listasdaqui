@@ -69,6 +69,78 @@ async function chamarOpenAI(prompt: string) {
     return response.choices[0].message.content || ''
 }
 
+const PROMPT_OTIMIZAR = (conteudoAtual: object, termos: string) => `
+Você é um Especialista em SEO Local. Receberá um conteúdo existente e novos termos de pesquisa.
+Sua tarefa é otimizar o conteúdo incorporando os novos termos de forma natural, sem alterar o tom ou estrutura.
+
+### TERMOS DE PESQUISA A INCORPORAR:
+${termos}
+
+### CONTEÚDO ATUAL (JSON):
+${JSON.stringify(conteudoAtual, null, 2)}
+
+### INSTRUÇÕES:
+- Mantenha todos os campos existentes
+- Incorpore os termos de pesquisa naturalmente no titulo, introducao, corpoTexto e faq
+- Não force os termos — integre-os onde fizerem sentido semântico
+- Não reduza o tamanho do texto
+- Adicione 1-2 perguntas no FAQ que cubram os novos termos, se relevante
+- precoMin e precoMax devem permanecer iguais
+
+Retorne APENAS JSON válido no mesmo formato do conteúdo atual.`;
+
+export async function otimizarConteudoIA(params: {
+    servicoId: string;
+    cidadeId: string;
+    termos: string;
+}) {
+    const { servicoId, cidadeId, termos } = params;
+
+    const conteudo = await prisma.conteudo.findUnique({
+        where: { servicoId_cidadeId: { servicoId, cidadeId } }
+    });
+
+    if (!conteudo) throw new Error('Conteúdo não encontrado. Gere o conteúdo base primeiro.');
+
+    const conteudoAtual = {
+        titulo: conteudo.titulo,
+        introducao: conteudo.introducao,
+        corpoTexto: conteudo.corpoTexto,
+        precoMin: conteudo.precoMin,
+        precoMax: conteudo.precoMax,
+        beneficios: conteudo.beneficiosJson,
+        dicas: conteudo.dicasJson,
+        faq: conteudo.faqJson
+    };
+
+    const provider = await getProvider();
+    const prompt = PROMPT_OTIMIZAR(conteudoAtual, termos);
+
+    let cleanText = '';
+    if (provider === 'openai') {
+        cleanText = await chamarOpenAI(prompt);
+    } else {
+        cleanText = await chamarAnthropic(prompt);
+    }
+
+    if (!cleanText) throw new Error('Resposta da IA veio vazia');
+
+    const data = JSON.parse(cleanText);
+
+    return prisma.conteudo.update({
+        where: { servicoId_cidadeId: { servicoId, cidadeId } },
+        data: {
+            titulo: data.titulo,
+            introducao: data.introducao,
+            corpoTexto: data.corpoTexto,
+            beneficiosJson: data.beneficios,
+            dicasJson: data.dicas,
+            faqJson: data.faq,
+            atualizadoEm: new Date()
+        }
+    });
+}
+
 export async function gerarConteudoIA(params: {
     servicoId: string;
     cidadeId: string;

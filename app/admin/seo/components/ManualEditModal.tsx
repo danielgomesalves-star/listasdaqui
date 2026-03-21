@@ -38,6 +38,8 @@ interface ManualEditModalProps {
 export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: ManualEditModalProps) {
     const [loading, setLoading] = useState(false)
     const [generating, setGenerating] = useState(false)
+    const [optimizing, setOptimizing] = useState(false)
+    const [termos, setTermos] = useState('')
 
     const [formData, setFormData] = useState({
         titulo: '',
@@ -66,6 +68,38 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
     }, [item])
 
     if (!isOpen || !item) return null
+
+    const handleOptimizeAI = async () => {
+        if (!termos.trim()) { toast.error('Informe pelo menos um termo de pesquisa'); return }
+        setOptimizing(true)
+        const token = localStorage.getItem('adminToken')
+        try {
+            const res = await fetch('/api/admin/seo/conteudo/otimizar', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ servicoId: item!.servicoId, cidadeId: item!.cidadeId, termos })
+            })
+            const json = await res.json()
+            if (!res.ok) throw new Error(json.error || 'Erro na otimização')
+            const data = json.data
+            setFormData({
+                titulo: data.titulo,
+                introducao: data.introducao,
+                corpoTexto: data.corpoTexto,
+                precoMin: data.precoMin,
+                precoMax: data.precoMax,
+                beneficios: data.beneficiosJson || [],
+                dicas: data.dicasJson || [],
+                faq: data.faqJson || []
+            })
+            setTermos('')
+            toast.success('Conteúdo otimizado com os novos termos!')
+        } catch (error: any) {
+            toast.error(error.message)
+        } finally {
+            setOptimizing(false)
+        }
+    }
 
     const handleGenerateAI = async () => {
         setGenerating(true)
@@ -175,6 +209,27 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
                             className="bg-accent text-white px-4 py-2 rounded-lg font-bold text-sm shadow-sm hover:bg-black transition-colors disabled:opacity-50"
                         >
                             {generating ? 'Gerando...' : '✨ Sugerir com IA'}
+                        </button>
+                    </div>
+
+                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-200 space-y-3">
+                        <div>
+                            <p className="font-bold text-purple-700 text-sm">Otimização com IA</p>
+                            <p className="text-text3 text-xs">Insira novos termos de pesquisa para serem incorporados ao texto existente.</p>
+                        </div>
+                        <textarea
+                            rows={2}
+                            className="w-full border border-purple-200 bg-white rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-400 outline-none"
+                            placeholder="Ex: mudança residencial, transporte de móveis, frete Joinville..."
+                            value={termos}
+                            onChange={e => setTermos(e.target.value)}
+                        />
+                        <button
+                            onClick={handleOptimizeAI}
+                            disabled={optimizing}
+                            className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-purple-700 transition-colors disabled:opacity-50"
+                        >
+                            {optimizing ? 'Otimizando...' : '🔍 Otimizar com novos termos'}
                         </button>
                     </div>
 
