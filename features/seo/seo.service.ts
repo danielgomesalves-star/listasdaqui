@@ -45,7 +45,9 @@ export async function listarConteudos(params: {
                     servicoId: s.id,
                     cidadeId: c.id,
                     servicoNome: s.nome,
+                    servicoSlug: s.slug,
                     cidadeNome: c.nome,
+                    cidadeSlug: c.slug,
                     uf: c.uf,
                     status,
                     ...conteudo as any

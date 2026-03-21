@@ -6,6 +6,8 @@ import { toast } from 'sonner'
 
 import ManualEditModal from './components/ManualEditModal'
 
+const BASE_URL = 'https://listasdaqui.com.br'
+
 async function fetchConteudo(filter: string, pagina: number = 1) {
     const token = localStorage.getItem('adminToken')
     if (!token) throw new Error('Não autenticado')
@@ -23,17 +25,17 @@ export default function SeoManagerPage() {
     const [filter, setFilter] = useState('todos')
     const [pagina, setPagina] = useState(1)
     const [itens, setItens] = useState<any[]>([])
+    const [selected, setSelected] = useState<Set<string>>(new Set())
 
     const [selectedItem, setSelectedItem] = useState<any>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const queryClient = useQueryClient()
 
-    const { data, isLoading, error, isPlaceholderData } = useQuery({
+    const { data, isLoading, error } = useQuery({
         queryKey: ['seo-conteudo', filter, pagina],
         queryFn: () => fetchConteudo(filter, pagina),
     })
 
-    // Atualiza a lista acumulada quando novos dados chegam
     useEffect(() => {
         if (data?.itens) {
             if (pagina === 1) {
@@ -44,23 +46,35 @@ export default function SeoManagerPage() {
         }
     }, [data, pagina])
 
-    // Reseta página ao mudar filtro
     const handleFilterChange = (newFilter: string) => {
         setFilter(newFilter)
         setPagina(1)
         setItens([])
+        setSelected(new Set())
     }
 
-    // Mutation for generating mock content
+    const toggleSelect = (key: string) => {
+        setSelected(prev => {
+            const next = new Set(prev)
+            next.has(key) ? next.delete(key) : next.add(key)
+            return next
+        })
+    }
+
+    const toggleSelectAll = () => {
+        if (selected.size === itens.length) {
+            setSelected(new Set())
+        } else {
+            setSelected(new Set(itens.map((p: any) => `${p.servicoId}:${p.cidadeId}`)))
+        }
+    }
+
     const generateMutation = useMutation({
         mutationFn: async () => {
             const token = localStorage.getItem('adminToken')
             const res = await fetch('/api/admin/seo/conteudo/gerar', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ modo: 'ia' })
             })
             const json = await res.json()
@@ -71,23 +85,38 @@ export default function SeoManagerPage() {
             toast.success(data.message)
             queryClient.invalidateQueries({ queryKey: ['seo-conteudo'] })
         },
-        onError: (err: Error) => {
-            toast.error(err.message)
-        }
+        onError: (err: Error) => toast.error(err.message)
     })
 
-    const handleSimularGeracao = () => {
-        toast('Iniciando geração...', { description: 'Processando lote de 5 páginas via IA por vez.' })
-        generateMutation.mutate()
-    }
+    const generateSelectedMutation = useMutation({
+        mutationFn: async () => {
+            const token = localStorage.getItem('adminToken')
+            const alvos = itens
+                .filter((p: any) => selected.has(`${p.servicoId}:${p.cidadeId}`))
+                .map((p: any) => ({ servicoId: p.servicoId, cidadeId: p.cidadeId }))
 
-    const openEditModal = (item: any) => {
-        setSelectedItem(item)
-        setIsModalOpen(true)
-    }
+            let ok = 0
+            for (const alvo of alvos) {
+                const res = await fetch('/api/admin/seo/conteudo/individual', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(alvo)
+                })
+                if (res.ok) ok++
+            }
+            return ok
+        },
+        onSuccess: (ok) => {
+            toast.success(`${ok} página(s) geradas com sucesso!`)
+            setSelected(new Set())
+            queryClient.invalidateQueries({ queryKey: ['seo-conteudo'] })
+        },
+        onError: (err: Error) => toast.error(err.message)
+    })
 
     const stats = data?.stats || { totalGeradas: 0, totalFaltando: 0 }
     const percentual = Math.round((stats.totalGeradas / Math.max(1, stats.totalGeradas + stats.totalFaltando)) * 100) || 0
+    const allSelected = itens.length > 0 && selected.size === itens.length
 
     return (
         <div>
@@ -98,8 +127,19 @@ export default function SeoManagerPage() {
                 </div>
 
                 <div className="flex gap-2">
+                    {selected.size > 0 && (
+                        <button
+                            onClick={() => generateSelectedMutation.mutate()}
+                            disabled={generateSelectedMutation.isPending}
+                            className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-green-700 transition-colors disabled:opacity-50 whitespace-nowrap"
+                        >
+                            {generateSelectedMutation.isPending
+                                ? 'Gerando...'
+                                : `✨ Gerar ${selected.size} selecionado(s)`}
+                        </button>
+                    )}
                     <button
-                        onClick={handleSimularGeracao}
+                        onClick={() => generateMutation.mutate()}
                         disabled={generateMutation.isPending || stats.totalFaltando === 0}
                         className="bg-accent text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-black transition-colors disabled:opacity-50 whitespace-nowrap"
                     >
@@ -129,7 +169,7 @@ export default function SeoManagerPage() {
             <div className="flex gap-2 mb-6">
                 <button onClick={() => handleFilterChange('todos')} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === 'todos' ? 'bg-text text-white' : 'bg-white border border-border text-text3'}`}>Ver Todos</button>
                 <button onClick={() => handleFilterChange('faltando')} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === 'faltando' ? 'bg-orange-500 text-white' : 'bg-white border border-border text-text3'}`}>Faltando Conteúdo</button>
-                <button onClick={() => handleFilterChange('gerado')} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === 'gerado' ? 'bg-green-600 text-white' : 'bg-white border border-border text-text3'}`}>Indexadas (Prontas) </button>
+                <button onClick={() => handleFilterChange('gerado')} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === 'gerado' ? 'bg-green-600 text-white' : 'bg-white border border-border text-text3'}`}>Indexadas (Prontas)</button>
             </div>
 
             <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden min-h-[300px]">
@@ -144,6 +184,15 @@ export default function SeoManagerPage() {
                     <table className="w-full text-left">
                         <thead className="bg-bg text-text3 text-xs uppercase font-bold">
                             <tr>
+                                <th className="p-4 w-10">
+                                    <input
+                                        type="checkbox"
+                                        checked={allSelected}
+                                        onChange={toggleSelectAll}
+                                        className="w-4 h-4 accent-accent cursor-pointer"
+                                        title="Selecionar todos"
+                                    />
+                                </th>
                                 <th className="p-4">Alvo URL</th>
                                 <th className="p-4">Meta Title (SEO)</th>
                                 <th className="p-4 w-32 text-center">Status</th>
@@ -151,37 +200,62 @@ export default function SeoManagerPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border text-sm">
-                            {itens.map((p: any, i: number) => (
-                                <tr key={i} className="hover:bg-gray-50 transition-colors">
-                                    <td className="p-4 font-bold text-text">
-                                        /{p.cidadeNome.toLowerCase().replace(/\s+/g, '-')}-{p.uf.toLowerCase()}/{p.servicoNome.toLowerCase().replace(/\s+/g, '-')}/
-                                    </td>
-                                    <td className="p-4 text-text3 truncate max-w-[250px]">
-                                        {p.status === 'gerado' ? p.titulo : <span className="opacity-40 italic">Aguardando IA...</span>}
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        {p.status === 'gerado' ? (
-                                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">✓ PRONTO</span>
-                                        ) : (
-                                            <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">⏳ FALTANDO</span>
-                                        )}
-                                    </td>
-                                    <td className="p-4 text-right">
-                                        <button
-                                            onClick={() => openEditModal(p)}
-                                            className="bg-bg border border-border px-3 py-1.5 rounded-lg font-bold hover:bg-white text-text3 text-xs transition-colors"
-                                        >
-                                            {p.status === 'gerado' ? 'Editar/Personalizar' : '✨ Gerar Manual'}
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                            {itens.map((p: any, i: number) => {
+                                const key = `${p.servicoId}:${p.cidadeId}`
+                                const url = `/${p.cidadeSlug}/${p.servicoSlug}/`
+                                const fullUrl = `${BASE_URL}${url}`
+                                const isChecked = selected.has(key)
+
+                                return (
+                                    <tr key={i} className={`hover:bg-gray-50 transition-colors ${isChecked ? 'bg-blue-50' : ''}`}>
+                                        <td className="p-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={isChecked}
+                                                onChange={() => toggleSelect(key)}
+                                                className="w-4 h-4 accent-accent cursor-pointer"
+                                            />
+                                        </td>
+                                        <td className="p-4 font-mono text-xs text-text2 max-w-[220px]">
+                                            <span className="break-all">{url}</span>
+                                        </td>
+                                        <td className="p-4 text-text3 truncate max-w-[220px]">
+                                            {p.status === 'gerado' ? p.titulo : <span className="opacity-40 italic">Aguardando IA...</span>}
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            {p.status === 'gerado' ? (
+                                                <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">✓ PRONTO</span>
+                                            ) : (
+                                                <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">⏳ FALTANDO</span>
+                                            )}
+                                        </td>
+                                        <td className="p-4 text-right">
+                                            <div className="flex gap-2 justify-end">
+                                                <a
+                                                    href={fullUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="bg-bg border border-border px-3 py-1.5 rounded-lg font-bold hover:bg-white text-text3 text-xs transition-colors"
+                                                    title="Abrir página"
+                                                >
+                                                    ↗
+                                                </a>
+                                                <button
+                                                    onClick={() => { setSelectedItem(p); setIsModalOpen(true) }}
+                                                    className="bg-bg border border-border px-3 py-1.5 rounded-lg font-bold hover:bg-white text-text3 text-xs transition-colors"
+                                                >
+                                                    {p.status === 'gerado' ? 'Editar' : '✨ Gerar'}
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
                         </tbody>
                     </table>
                 )}
             </div>
 
-            {/* Paginação */}
             {data?.totalPaginas > pagina && (
                 <div className="mt-6 flex justify-center">
                     <button
