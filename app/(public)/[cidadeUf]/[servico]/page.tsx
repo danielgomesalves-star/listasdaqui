@@ -23,12 +23,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     });
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://listasdaqui.com.br';
     const title = conteudo?.titulo || `${servico.nome} em ${cidade.nome} | ListasDaqui`;
-    const description = conteudo?.introducao?.substring(0, 160) || `Encontre profissionais de ${servico.nome.toLowerCase()} em ${cidade.nome}, ${cidade.uf}.`;
+    const rawDesc = conteudo?.introducao || `Encontre profissionais de ${servico.nome.toLowerCase()} em ${cidade.nome}, ${cidade.uf}.`;
+    const description = rawDesc.length <= 155 ? rawDesc : rawDesc.substring(0, rawDesc.lastIndexOf(' ', 155)) + '...';
     const url = `${baseUrl}/${cidade.slug}/${servico.slug}`;
     return {
         title,
         description,
         alternates: { canonical: url },
+        robots: { index: true, follow: true },
         openGraph: {
             title,
             description,
@@ -165,7 +167,7 @@ export default async function CategoryPage({ params }: Props) {
                         {prestadores.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                                 <div className="text-5xl mb-4">🔍</div>
-                                <h2 className="text-lg font-black text-text mb-2">Nenhum profissional encontrado</h2>
+                                <p className="text-lg font-black text-text mb-2">Nenhum profissional encontrado</p>
                                 <p className="text-sm text-text3 mb-6">Ainda não temos profissionais de {servico.nome.toLowerCase()} cadastrados em {cidade.nome}. Seja o primeiro!</p>
                                 <Link href="/cadastro" className="bg-text text-white px-6 py-3 rounded-xl font-bold text-sm no-underline hover:opacity-90 transition-opacity">
                                     Anunciar meu serviço →
