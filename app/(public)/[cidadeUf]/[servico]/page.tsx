@@ -189,24 +189,33 @@ export default async function CategoryPage({ params }: Props) {
                                 const isPago = p.plano !== 'GRATUITO';
 
                                 return (
-                                    <Link
+                                    <div
                                         key={p.id}
-                                        href={`/${cidade.slug}/${servico.slug}/${p.slug || p.id}`}
-                                        className={`flex items-start gap-3.5 p-4 border-b border-border relative no-underline text-inherit hover:bg-bg2 transition-colors ${i === 0 && isPago ? 'bg-gradient-to-r from-[#FFFBEB] to-white' : 'bg-white'}`}
+                                        className={`flex items-center relative border-b border-border hover:bg-bg2 transition-colors ${i === 0 && isPago ? 'bg-gradient-to-r from-[#FFFBEB] to-white' : 'bg-white'}`}
                                     >
-                                        <Avatar nome={p.nome} foto={p.foto} isPago={isPago} colorIndex={i} />
-                                        <div className="flex-1 min-w-0 pt-0.5">
-                                            <div className="flex items-center gap-1.5 mb-1">
-                                                <span className={`text-lg font-black tracking-tight truncate max-w-[200px] ${isPago ? 'text-text' : 'text-text2'}`}>{p.nome}</span>
-                                                {isPago && <span className="text-accent text-[13px] tracking-[-2px] shrink-0">✓✓</span>}
+                                        <Link
+                                            href={`/${cidade.slug}/${servico.slug}/${p.slug || p.id}`}
+                                            className="flex-1 flex items-start gap-3.5 p-4 pr-16 no-underline text-inherit"
+                                        >
+                                            <Avatar nome={p.nome} foto={p.foto} isPago={isPago} colorIndex={i} />
+                                            <div className="flex-1 min-w-0 pt-0.5">
+                                                <div className="flex items-center gap-1.5 mb-1">
+                                                    <span className={`text-lg font-black tracking-tight truncate max-w-[200px] ${isPago ? 'text-text' : 'text-text2'}`}>{p.nome}</span>
+                                                    {isPago && <span className="text-accent text-[13px] tracking-[-2px] shrink-0">✓✓</span>}
+                                                </div>
+                                                {p.bio && <div className="text-[13.5px] text-text2 mb-1.5 truncate">{p.bio}</div>}
+                                                <div className="text-[13px] text-text3">{cidade.nome}</div>
                                             </div>
-                                            {p.bio && <div className="text-[13.5px] text-text2 mb-1.5 truncate">{p.bio}</div>}
-                                            <div className="text-[13px] text-text3">{cidade.nome}</div>
-                                        </div>
-                                        <div className={`absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-[22px] ${isPago ? 'bg-wa shadow-[0_4px_14px_rgba(37,211,102,0.35)] text-white' : 'bg-bg2 border-2 border-dashed border-border cursor-not-allowed'}`}>
-                                            {isPago ? <WhatsAppIcon /> : '🔒'}
-                                        </div>
-                                    </Link>
+                                        </Link>
+                                        <a
+                                            href={`https://api.whatsapp.com/send/?phone=55${p.whatsapp}&text=${encodeURIComponent(`Olá! Vi seu perfil no *ListasDaqui* para ${servico.nome} e gostaria de entrar em contato.`)}&type=phone_number&app_absent=0`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-[22px] bg-wa shadow-[0_4px_14px_rgba(37,211,102,0.35)] text-white hover:scale-110 transition-transform z-10"
+                                        >
+                                            <WhatsAppIcon />
+                                        </a>
+                                    </div>
                                 );
                             })
                         )}

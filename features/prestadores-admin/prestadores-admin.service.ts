@@ -112,27 +112,14 @@ export async function bloquearFichaPrestador(params: {
 
 export async function criarPrestadorManual(data: {
     nome: string,
-    email: string,
+    email?: string,
     whatsapp: string,
     cidadeId: string,
     servicoId: string,
     bio?: string,
     instagram?: string
 }) {
-    // 1. Check if email already exists
-    const userExists = await prisma.user.findUnique({
-        where: { email: data.email },
-    })
-
-    if (userExists) {
-        throw new Error('E-mail já está em uso')
-    }
-
-    // 2. Hash random password
-    const randomPassword = Math.random().toString(36).slice(-8)
-    const passwordHash = await hash(randomPassword, 10)
-
-    // 3. Generate a friendly slug from name
+    // 1. Generate a friendly slug from name
     let slugBase = data.nome.toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, "")
@@ -154,11 +141,29 @@ export async function criarPrestadorManual(data: {
         }
     }
 
+    // 2. Resolve email (if empty, generate one)
+    const finalEmail = data.email && data.email.trim() !== ''
+        ? data.email
+        : `${slug}-${Math.floor(Date.now() / 1000)}@listasdaqui.com.br`
+
+    // Check if email already exists
+    const userExists = await prisma.user.findUnique({
+        where: { email: finalEmail },
+    })
+
+    if (userExists) {
+        throw new Error('E-mail já está em uso')
+    }
+
+    // 3. Hash random password
+    const randomPassword = Math.random().toString(36).slice(-8)
+    const passwordHash = await hash(randomPassword, 10)
+
     // 4. Create User and Prestador
     const result = await prisma.$transaction(async (tx) => {
         const user = await tx.user.create({
             data: {
-                email: data.email,
+                email: finalEmail,
                 passwordHash,
                 role: 'PRESTADOR',
             }

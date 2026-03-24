@@ -103,8 +103,8 @@ export default function ManualRegistrationModal({ isOpen, onClose, onSuccess }: 
                             <input required name="nome" value={formData.nome} onChange={handleChange} className="w-full bg-bg border border-border rounded-lg p-3 text-sm focus:ring-2 focus:ring-accent outline-none" placeholder="Ex: João Encanador" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-text2 uppercase mb-1">E-mail (Login) *</label>
-                            <input required type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-bg border border-border rounded-lg p-3 text-sm focus:ring-2 focus:ring-accent outline-none" placeholder="joao@email.com" />
+                            <label className="block text-xs font-bold text-text2 uppercase mb-1">E-mail (Login) (opcional)</label>
+                            <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-bg border border-border rounded-lg p-3 text-sm focus:ring-2 focus:ring-accent outline-none" placeholder="joao@email.com" />
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-text2 uppercase mb-1">WhatsApp *</label>
