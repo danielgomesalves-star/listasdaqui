@@ -243,9 +243,23 @@ export default async function CategoryPage({ params }: Props) {
 
                                 {/* Introdução/Snippet */}
                                 {conteudo.introducao && (
-                                    <p className="text-[14px] text-text2 leading-relaxed mb-6 font-medium">
-                                        {conteudo.introducao}
-                                    </p>
+                                    <>
+                                        <p className="text-[14px] text-text2 leading-relaxed mb-6 font-medium">
+                                            {conteudo.introducao}
+                                        </p>
+
+                                        {/* Adsense - ListaDaqui Responsivo */}
+                                        <div className="mb-6 rounded-xl overflow-hidden bg-bg2 flex items-center justify-center min-h-[100px]">
+                                            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3182500327911364" crossOrigin="anonymous"></script>
+                                            <ins className="adsbygoogle"
+                                                style={{ display: 'block', width: '100%' }}
+                                                data-ad-client="ca-pub-3182500327911364"
+                                                data-ad-slot="5843272166"
+                                                data-ad-format="auto"
+                                                data-full-width-responsive="true"></ins>
+                                            <script dangerouslySetInnerHTML={{ __html: '(adsbygoogle = window.adsbygoogle || []).push({});' }} />
+                                        </div>
+                                    </>
                                 )}
 
                                 {/* Benefícios */}
