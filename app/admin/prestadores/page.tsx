@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import ModerationDetailsModal from '@/components/admin/ModerationDetailsModal'
 import ConfirmModal from '@/components/admin/ConfirmModal'
+import ManualRegistrationModal from '@/components/admin/ManualRegistrationModal'
 
 export default function ModeraPrestadores() {
     const router = useRouter()
@@ -14,6 +15,7 @@ export default function ModeraPrestadores() {
 
     const [selectedPrestador, setSelectedPrestador] = useState<any>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isManualModalOpen, setIsManualModalOpen] = useState(false)
 
     // Estado do Modal de Confirmação
     const [confirmConfig, setConfirmConfig] = useState<{
@@ -118,7 +120,15 @@ export default function ModeraPrestadores() {
 
     return (
         <div>
-            <h1 className="text-3xl font-black mb-8 tracking-tight">Moderação de Fichas</h1>
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-black tracking-tight">Moderação de Fichas</h1>
+                <button
+                    onClick={() => setIsManualModalOpen(true)}
+                    className="bg-black text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-gray-800 transition-colors flex items-center gap-2"
+                >
+                    <span className="text-lg leading-none">+</span> Cadastrar Manualmente
+                </button>
+            </div>
 
             <div className="flex gap-2 mb-6">
                 <button onClick={() => setFilter('pendentes')} className={`px-4 py-2 rounded-lg text-sm font-bold ${filter === 'pendentes' ? 'bg-orange-500 text-white' : 'bg-white border border-border text-text3'}`}>Pendentes (Aprovação)</button>
@@ -196,6 +206,12 @@ export default function ModeraPrestadores() {
             <ConfirmModal
                 {...confirmConfig}
                 onClose={() => setConfirmConfig({ ...confirmConfig, isOpen: false })}
+            />
+
+            <ManualRegistrationModal
+                isOpen={isManualModalOpen}
+                onClose={() => setIsManualModalOpen(false)}
+                onSuccess={() => fetchPrestadores(filter)}
             />
         </div>
     )

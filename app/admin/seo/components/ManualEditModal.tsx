@@ -39,6 +39,8 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
     const [loading, setLoading] = useState(false)
     const [generating, setGenerating] = useState(false)
     const [optimizing, setOptimizing] = useState(false)
+    const [generatingImage, setGeneratingImage] = useState(false)
+    const [imagemUrl, setImagemUrl] = useState<string | null>(null)
     const [termos, setTermos] = useState('')
 
     const [formData, setFormData] = useState({
@@ -68,6 +70,27 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
     }, [item])
 
     if (!isOpen || !item) return null
+
+    const handleGenerateImage = async (modo: 'dalle' | 'og') => {
+        setGeneratingImage(true)
+        const token = localStorage.getItem('adminToken')
+        try {
+            const res = await fetch('/api/admin/seo/imagem/gerar', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ servicoId: item!.servicoId, cidadeId: item!.cidadeId, modo })
+            })
+            const json = await res.json()
+            if (!res.ok) throw new Error(json.error || 'Erro ao gerar imagem')
+            setImagemUrl(json.imagemUrl)
+            if (json.aviso) toast.warning(json.aviso)
+            else toast.success(modo === 'og' ? 'Capa gerada localmente!' : 'Imagem DALL-E gerada e salva!')
+        } catch (error: any) {
+            toast.error(error.message)
+        } finally {
+            setGeneratingImage(false)
+        }
+    }
 
     const handleOptimizeAI = async () => {
         if (!termos.trim()) { toast.error('Informe pelo menos um termo de pesquisa'); return }
@@ -231,6 +254,36 @@ export default function ManualEditModal({ isOpen, onClose, item, onSuccess }: Ma
                         >
                             {optimizing ? 'Otimizando...' : '🔍 Otimizar com novos termos'}
                         </button>
+                    </div>
+
+                    {/* Geração de imagem */}
+                    <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 space-y-3">
+                        <div>
+                            <p className="font-bold text-emerald-700 text-sm">🖼️ Imagem para Open Graph</p>
+                            <p className="text-text3 text-xs mb-3">Capa usada no compartilhamento e nos resultados de busca.</p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handleGenerateImage('og')}
+                                    disabled={generatingImage}
+                                    className="flex-1 bg-emerald-600 text-white px-3 py-2 rounded-lg font-bold text-sm hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                                >
+                                    {generatingImage ? 'Gerando...' : '🎨 Capa local (grátis)'}
+                                </button>
+                                <button
+                                    onClick={() => handleGenerateImage('dalle')}
+                                    disabled={generatingImage}
+                                    className="flex-1 bg-white border border-emerald-300 text-emerald-700 px-3 py-2 rounded-lg font-bold text-sm hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                                >
+                                    {generatingImage ? 'Gerando...' : '✨ DALL-E 3 (OpenAI)'}
+                                </button>
+                            </div>
+                        </div>
+                        {imagemUrl && (
+                            <div>
+                                <img src={imagemUrl} alt="Imagem gerada" className="w-full rounded-xl border border-emerald-200 object-cover" style={{ maxHeight: 160 }} />
+                                <p className="text-xs text-text3 mt-1 break-all">URL: <code className="bg-white px-1 rounded">{imagemUrl}</code></p>
+                            </div>
+                        )}
                     </div>
 
                     <div>

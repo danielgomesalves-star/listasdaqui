@@ -1,1 +1,1 @@
-{"version":1,"functions":{"/api/health":{},"/[cidadeUf]/[servico]/[prestador]":{},"/cadastro":{},"/":{},"/[cidadeUf]/[servico]":{},"/[cidadeUf]":{}}}
+{"version":1,"functions":{"/api/cidades":{},"/api/health":{},"/api/og":{},"/[cidadeUf]":{},"/[cidadeUf]/[servico]/[prestador]":{},"/cadastro":{},"/":{},"/[cidadeUf]/[servico]":{}}}

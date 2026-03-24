@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Avatar } from '@/components/ui/Avatar';
 import { FAQItem } from '@/components/ui/FAQItem';
+import { buildOgUrl } from '@/lib/og-url';
 
 
 export const dynamic = 'force-dynamic';
@@ -22,10 +23,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         where: { servicoId_cidadeId: { servicoId: servico.id, cidadeId: cidade.id } }
     });
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://listasdaqui.com.br';
-    const title = conteudo?.titulo || `${servico.nome} em ${cidade.nome} | ListasDaqui`;
-    const rawDesc = conteudo?.introducao || `Encontre profissionais de ${servico.nome.toLowerCase()} em ${cidade.nome}, ${cidade.uf}.`;
+    const rawTitle = conteudo?.titulo || `${servico.nome} em ${cidade.nome} | ListasDaqui`;
+    // Trim title to ~65 chars at word boundary
+    const title = rawTitle.length <= 65 ? rawTitle : rawTitle.substring(0, rawTitle.lastIndexOf(' ', 65)) + '…';
+    const rawDesc = conteudo?.introducao || `Encontre profissionais de ${servico.nome.toLowerCase()} em ${cidade.nome}, ${cidade.uf}. Avaliados por moradores. Fale direto pelo WhatsApp.`;
     const description = rawDesc.length <= 155 ? rawDesc : rawDesc.substring(0, rawDesc.lastIndexOf(' ', 155)) + '...';
     const url = `${baseUrl}/${cidade.slug}/${servico.slug}`;
+    const ogImagePath = buildOgUrl(servico.nome, servico.slug, cidade.nome, cidade.uf)
+    const ogImage = `${baseUrl}${ogImagePath}`;
     return {
         title,
         description,
@@ -38,13 +43,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             siteName: 'ListasDaqui',
             locale: 'pt_BR',
             type: 'website',
-            images: [{ url: `${baseUrl}/og-default.png`, width: 1200, height: 630, alt: title }],
+            images: [{ url: ogImage, width: 1792, height: 1024, alt: title }],
         },
         twitter: {
             card: 'summary_large_image',
             title,
             description,
-            images: [`${baseUrl}/og-default.png`],
+            images: [ogImage],
         },
     };
 }
@@ -61,7 +66,7 @@ export default async function CategoryPage({ params }: Props) {
         notFound();
     }
 
-    const [prestadores, conteudo] = await Promise.all([
+    const [prestadores, conteudo, servicosRelacionados] = await Promise.all([
         prisma.prestador.findMany({
             where: { cidadeId: cidade.id, servicoId: servico.id, ativo: true, aprovado: true },
             orderBy: [{ plano: 'desc' }, { createdAt: 'asc' }],
@@ -69,6 +74,12 @@ export default async function CategoryPage({ params }: Props) {
         }),
         prisma.conteudo.findUnique({
             where: { servicoId_cidadeId: { servicoId: servico.id, cidadeId: cidade.id } }
+        }),
+        prisma.servico.findMany({
+            where: { ativo: true, NOT: { id: servico.id } },
+            orderBy: { nome: 'asc' },
+            take: 8,
+            select: { slug: true, nome: true, icone: true }
         })
     ]);
 
@@ -243,6 +254,16 @@ export default async function CategoryPage({ params }: Props) {
                                     </div>
                                 )}
 
+                                {/* Corpo Editorial — visível por padrão (SEO) */}
+                                {conteudo.corpoTexto && (
+                                    <div className="mb-6">
+                                        <h2 className="text-[14px] font-black text-text uppercase tracking-wider mb-3">Sobre {servico.nome} em {cidade.nome}</h2>
+                                        <div className="text-[13px] text-text2 leading-relaxed whitespace-pre-wrap">
+                                            {conteudo.corpoTexto}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Dicas de Especialista */}
                                 {dicas.length > 0 && (
                                     <div className="mb-6">
@@ -250,27 +271,14 @@ export default async function CategoryPage({ params }: Props) {
                                         <div className="space-y-3">
                                             {dicas.map((d, i: number) => (
                                                 <div key={i} className="bg-white rounded-xl p-4 border border-border/60">
-                                                    <div className="text-[13px] font-bold text-text mb-1 flex items-center gap-2">
+                                                    <h3 className="text-[13px] font-bold text-text mb-1 flex items-center gap-2">
                                                         <span className="text-accent text-sm">💡</span> {d.titulo}
-                                                    </div>
-                                                    <div className="text-[12px] text-text3 leading-relaxed">{d.descricao}</div>
+                                                    </h3>
+                                                    <p className="text-[12px] text-text3 leading-relaxed">{d.descricao}</p>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                )}
-
-                                {/* Corpo Editorial Longo (Colapsável) */}
-                                {conteudo.corpoTexto && (
-                                    <details className="group mb-6">
-                                        <summary className="list-none cursor-pointer flex items-center justify-between">
-                                            <h2 className="text-[14px] font-black text-text uppercase tracking-wider">Mais Informações</h2>
-                                            <span className="text-accent text-xs font-bold group-open:rotate-180 transition-transform">↓</span>
-                                        </summary>
-                                        <div className="mt-3 text-[13px] text-text2 leading-relaxed whitespace-pre-wrap pt-3 border-t border-border/40">
-                                            {conteudo.corpoTexto}
-                                        </div>
-                                    </details>
                                 )}
 
                                 {/* PREÇOS */}
@@ -301,6 +309,26 @@ export default async function CategoryPage({ params }: Props) {
                                         {faqs.map((faq, i: number) => (
                                             <FAQItem key={i} pergunta={faq.pergunta} resposta={faq.resposta} />
                                         ))}
+                                    </div>
+                                )}
+
+                                {/* Links internos — outros serviços na mesma cidade */}
+                                {servicosRelacionados.length > 0 && (
+                                    <div className="pt-4 border-t border-border/40">
+                                        <h2 className="text-[14px] font-black text-text uppercase tracking-wider mb-3">
+                                            Outros serviços em {cidade.nome}
+                                        </h2>
+                                        <div className="flex flex-wrap gap-2">
+                                            {servicosRelacionados.map((s: any) => (
+                                                <Link
+                                                    key={s.slug}
+                                                    href={`/${cidade.slug}/${s.slug}`}
+                                                    className="text-xs font-semibold bg-white border border-border px-3 py-1.5 rounded-full text-text2 hover:border-accent hover:text-accent transition-colors no-underline"
+                                                >
+                                                    {s.icone && <span className="mr-1">{s.icone}</span>}{s.nome}
+                                                </Link>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>

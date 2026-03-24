@@ -1,4 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+
+export const viewport: Viewport = {
+  themeColor: '#0EA5E9',
+};
 import { Inter } from 'next/font/google';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
 import { Toaster } from 'sonner';
@@ -12,7 +16,7 @@ export const metadata: Metadata = {
   title: 'ListasDaqui — Encontre Prestadores de Serviço',
   description: 'O guia de prestadores do Brasil. Encontre eletricistas, encanadores, pintores e mais na sua cidade.',
   manifest: '/manifest.json',
-  themeColor: '#0EA5E9',
+
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

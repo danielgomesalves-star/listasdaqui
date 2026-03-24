@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { emailQueue } from '@/jobs/queues'
 import { MOTIVOS_REJEICAO } from '@/features/onboarding/onboarding.service'
+import { hash } from 'bcryptjs'
 
 export async function listarPrestadoresAdmin(params: {
     page: number
@@ -107,4 +108,80 @@ export async function bloquearFichaPrestador(params: {
             data: { ativo: false }
         })
     ])
+}
+
+export async function criarPrestadorManual(data: {
+    nome: string,
+    email: string,
+    whatsapp: string,
+    cidadeId: string,
+    servicoId: string,
+    bio?: string,
+    instagram?: string
+}) {
+    // 1. Check if email already exists
+    const userExists = await prisma.user.findUnique({
+        where: { email: data.email },
+    })
+
+    if (userExists) {
+        throw new Error('E-mail já está em uso')
+    }
+
+    // 2. Hash random password
+    const randomPassword = Math.random().toString(36).slice(-8)
+    const passwordHash = await hash(randomPassword, 10)
+
+    // 3. Generate a friendly slug from name
+    let slugBase = data.nome.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\w\s]/gi, '')
+        .trim()
+        .replace(/\s+/g, '-')
+
+    // Ensure slug uniqueness
+    let slug = slugBase
+    let isUnique = false
+    let count = 0
+    while (!isUnique) {
+        const existing = await prisma.prestador.findUnique({ where: { slug } })
+        if (existing) {
+            count++
+            slug = `${slugBase}-${count}`
+        } else {
+            isUnique = true
+        }
+    }
+
+    // 4. Create User and Prestador
+    const result = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+            data: {
+                email: data.email,
+                passwordHash,
+                role: 'PRESTADOR',
+            }
+        })
+
+        const prestador = await tx.prestador.create({
+            data: {
+                userId: user.id,
+                nome: data.nome,
+                slug,
+                whatsapp: data.whatsapp.replace(/\D/g, ''),
+                cidadeId: data.cidadeId,
+                servicoId: data.servicoId,
+                bio: data.bio || null,
+                instagram: data.instagram || null,
+                plano: 'GRATUITO',
+                ativo: true,
+                aprovado: true,
+            }
+        })
+
+        return { user, prestador }
+    })
+
+    return result
 }

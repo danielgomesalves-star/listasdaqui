@@ -176,6 +176,7 @@ model Conteudo {
   beneficiosJson Json?   // array de strings
   dicasJson      Json?   // array de { titulo, descricao }
   faqJson        Json?   // array de { pergunta, resposta }
+  imagemUrl   String?  @db.VarChar(500) // URL da imagem gerada por IA
   geradoEm    DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 

@@ -1,12 +1,11 @@
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { ServiceCard } from '@/components/ui/ServiceCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { StatsRow } from '@/components/ui/StatsRow';
 import { CTABanner } from '@/components/ui/CTABanner';
 import { FeaturedProviderItem } from '@/components/ui/FeaturedProviderItem';
-
-const prisma = new PrismaClient();
+import { HomeSearch } from '@/components/ui/HomeSearch';
 
 // This prevents the page from failing if the database isn't fully seeded
 export const dynamic = 'force-static';
@@ -16,17 +15,14 @@ export default async function HomePage() {
   // Try to fetch top cities and services if DB is connected
   let topCidades: any[] = [];
   let topServicos: any[] = [];
+  let todosServicos: any[] = [];
 
   try {
-    topCidades = await prisma.cidade.findMany({
-      take: 6,
-      orderBy: { populacao: 'desc' },
-    });
-
-    topServicos = await prisma.servico.findMany({
-      take: 7,
-      orderBy: { nome: 'asc' }
-    });
+    [topCidades, topServicos, todosServicos] = await Promise.all([
+      prisma.cidade.findMany({ take: 6, orderBy: { populacao: 'desc' } }),
+      prisma.servico.findMany({ take: 7, orderBy: { nome: 'asc' } }),
+      prisma.servico.findMany({ where: { ativo: true }, orderBy: { nome: 'asc' }, select: { slug: true, nome: true, icone: true } }),
+    ]);
   } catch (err) {
     console.error("Home query falhou (provavelmente banco vazio ou offline):", err);
   }
@@ -40,18 +36,7 @@ export default async function HomePage() {
         <h1 className="hero-h1">Encontre quem <em>resolve</em> perto de você</h1>
         <p className="hero-sub">Eletricista, pintor, mecânico e mais — avaliados por moradores da sua cidade</p>
 
-        <div className="hero-search">
-          <div className="hs-label">O que você precisa?</div>
-          <div className="hs-field">
-            <span className="hs-icon">🔍</span>
-            <input type="text" placeholder="Ex: eletricista, pintor..." />
-          </div>
-          <div className="hs-field" style={{ marginBottom: 0 }}>
-            <span className="hs-icon">📍</span>
-            <input type="text" placeholder="Sua cidade ou CEP" defaultValue="Brasília, DF" />
-          </div>
-          <Link href="/brasilia-df" className="hs-btn mt-2 text-center">Buscar profissionais</Link>
-        </div>
+        <HomeSearch servicos={todosServicos} />
 
         <StatsRow stats={[
           { value: '487k', label: 'Profissionais' },

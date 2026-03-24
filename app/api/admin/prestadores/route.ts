@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { superAdminOnly } from '@/middleware/super-admin'
-import { listarPrestadoresAdmin } from '@/features/prestadores-admin/prestadores-admin.service'
+import { listarPrestadoresAdmin, criarPrestadorManual } from '@/features/prestadores-admin/prestadores-admin.service'
 
 export async function GET(req: NextRequest) {
     const admin = await superAdminOnly(req)
@@ -16,5 +16,18 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(result)
     } catch (error) {
         return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+    }
+}
+
+export async function POST(req: NextRequest) {
+    const admin = await superAdminOnly(req)
+    if (admin instanceof NextResponse) return admin
+
+    try {
+        const body = await req.json()
+        const result = await criarPrestadorManual(body)
+        return NextResponse.json(result, { status: 201 })
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message || 'Erro interno' }, { status: 400 })
     }
 }
